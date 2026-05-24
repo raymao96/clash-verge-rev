@@ -2,9 +2,10 @@ name: Auto Build
 
 on:
   workflow_dispatch:
-  schedule:
-    # UTC+8 12:00, 18:00 -> UTC 4:00, 10:00
-    - cron: '0 4,10 * * *'
+    inputs:
+      dummy:
+        description: 'This workflow is disabled in fork'
+        required: false
 permissions: write-all
 env:
   TAG_NAME: autobuild

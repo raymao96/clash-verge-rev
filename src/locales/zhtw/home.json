@@ -3,12 +3,12 @@
     "tooltips": {
       "lightweightMode": "輕量模式",
       "manual": "使用手冊",
-      "settings": "首頁設定"
+      "settings": "控制中心項目設定"
     },
     "cards": {
       "trafficStats": "流量統計",
       "networkSettings": "網路設定",
-      "proxyMode": "代理模式"
+      "proxyMode": "路由模式"
     },
     "settings": {
       "cards": {
@@ -18,44 +18,44 @@
         "proxyMode": "代理模式卡",
         "traffic": "流量統計卡",
         "tests": "網站測試卡",
-        "ip": "IP資訊卡",
+        "ip": "IP 資訊卡",
         "clashInfo": "Clash 資訊卡",
         "systemInfo": "系統資訊卡"
       },
-      "title": "首頁設定"
+      "title": "控制中心項目設定"
     },
-    "title": "首頁"
+    "title": "控制中心"
   },
   "components": {
     "proxyTun": {
       "status": {
-        "systemProxyEnabled": "系統代理已啟用，您的應用程式將透過代理存取網路",
-        "systemProxyDisabled": "系統代理已關閉，建議大多數使用者開啟此選項",
-        "tunModeServiceRequired": "虛擬網路介面卡模式需要服務模式，請先安裝服務",
-        "tunModeEnabled": "虛擬網路介面卡模式已啟用，應用程式將透過虛擬網路介面卡存取網路",
-        "tunModeDisabled": "虛擬網路介面卡模式已關閉，適用於特殊應用程式"
+        "systemProxyEnabled": "系統代理已啟用，您的 VPN 已連線",
+        "systemProxyDisabled": "系統代理已關閉，您的 VPN 已中斷",
+        "tunModeServiceRequired": "啟用 Tun 模式前，請先安裝服務模式",
+        "tunModeEnabled": "Tun 模式已啟用，您的流量將通過虛擬網卡",
+        "tunModeDisabled": "Tun 模式已關閉"
       },
       "tooltips": {
-        "systemProxy": "修改作業系統的代理設定，如果開啟失敗，可手動修改作業系統的代理設定",
-        "tunMode": "虛擬網路介面卡模式可以接管所有應用程式流量，適用於不遵循系統代理設定的特殊應用程式"
+        "systemProxy": "「系統代理」一般只接管「瀏覽器」網頁流量，打開「系統代理」相當於打開電腦系統裡的「代理伺服器設定」。如果您只需要瀏覽網頁，請打開此模式。",
+        "tunMode": "「Tun 模式」可接管電腦上所有應用程式的網路流量，通常用於「非瀏覽器」類型的電腦應用程式。如果您需要讓遊戲、Line 電腦版等應用程式通過 VPN 上網，請打開此模式。"
       }
     },
     "clashInfo": {
       "title": "Clash 資訊",
       "fields": {
-        "coreVersion": "內核版本",
+        "coreVersion": "核心版本",
         "systemProxyAddress": "系統代理位址",
         "mixedPort": "Mixed Port",
-        "uptime": "執行時間",
+        "uptime": "Uptime",
         "rulesCount": "規則數量"
       }
     },
     "systemInfo": {
       "title": "系統資訊",
       "fields": {
-        "osInfo": "作業系統資訊",
-        "autoLaunch": "開機自啟",
-        "runningMode": "執行模式",
+        "osInfo": "系統資訊",
+        "autoLaunch": "開機啟動",
+        "runningMode": "運作模式",
         "lastCheckUpdate": "最後檢查更新",
         "vergeVersion": "Verge 版本"
       },
@@ -70,11 +70,11 @@
       }
     },
     "ipInfo": {
-      "title": "IP資訊",
+      "title": "IP 資訊",
       "labels": {
         "ip": "IP",
-        "asn": "自治系統",
-        "isp": "網際網路服務供應商",
+        "asn": "ASN",
+        "isp": "ISP",
         "org": "組織",
         "location": "位置",
         "timezone": "時區",
@@ -93,9 +93,9 @@
       "labels": {
         "globalMode": "全域模式",
         "directMode": "直連模式",
-        "group": "代理組",
+        "group": "節點分組",
         "proxy": "節點",
-        "noActiveNode": "暫無作用中的代理節點"
+        "noActiveNode": "暫無可用節點"
       }
     },
     "tests": {
@@ -105,8 +105,8 @@
       "metrics": {
         "uploadSpeed": "上傳速度",
         "downloadSpeed": "下載速度",
-        "activeConnections": "作用中連線",
-        "memoryUsage": "內核佔用"
+        "activeConnections": "活躍中連線",
+        "memoryUsage": "佔用"
       },
       "legends": {
         "upload": "上傳",
@@ -118,17 +118,17 @@
     },
     "clashMode": {
       "errors": {
-        "communication": "內核通信錯誤"
+        "communication": "核心通訊失敗"
       },
       "labels": {
-        "rule": "規則",
+        "rule": "分流",
         "global": "全域",
         "direct": "直連"
       },
       "descriptions": {
-        "rule": "依照規則自動選擇代理。",
-        "global": "將所有網路請求轉送至所選代理。",
-        "direct": "略過代理，直接連線至網際網路。"
+        "rule": "根據分流規則【決定是否】透過 VPN 連線。",
+        "global": "所有網路流量【都】透過 VPN 連線。",
+        "direct": "所有網路流量【都不】透過 VPN 連線。"
       }
     }
   }

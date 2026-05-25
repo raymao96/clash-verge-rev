@@ -1,19 +1,19 @@
 _version: 1
 notifications:
   dashboardToggled:
-    title: 儀表板
-    body: 儀表板顯示狀態已更新。
+    title: 主視窗
+    body: 主視窗顯示狀態已更新。
   clashModeChanged:
     title: 模式切換
     body: 已切換至 {mode}。
   systemProxyToggled:
     title: 系統代理
-    'on': System proxy has been enabled.
-    'off': System proxy has been disabled.
+    'on': 系統代理已啟用。
+    'off': 系統代理已停用。
   tunModeToggled:
     title: 虛擬網路介面卡模式
-    'on': TUN mode has been enabled.
-    'off': TUN mode has been disabled.
+    'on': Tun 模式已啟用。
+    'off': Tun 模式已停用。
   lightweightModeEntered:
     title: 輕量模式
     body: 已進入輕量模式。
@@ -21,46 +21,46 @@ notifications:
     title: 訂閱
     body: 訂閱已啟用。
   appQuit:
-    title: 即將退出
-    body: Clash Verge 即將退出。
+    title: 即將結束
+    body: Clash Verge 即將結束。
   appHidden:
-    title: 應用已隱藏
+    title: 應用程式已隱藏
     body: Clash Verge 正在背景執行。
   updateReady:
-    title: Clash Verge Update
-    body: A new version (v{version}) has been downloaded and is ready to install.
-    installNow: Install Now
-    later: Later
+    title: Clash Verge 更新
+    body: 新版本 (v{version}) 已下載完成，現在可以安裝。
+    installNow: 立即安裝
+    later: 稍後
 service:
-  adminInstallPrompt: 安裝 Clash Verge 服務需要管理員權限
-  adminUninstallPrompt: 卸载 Clash Verge 服務需要管理員權限
+  adminInstallPrompt: 安裝 Clash Verge 服務需要管理員權限。
+  adminUninstallPrompt: 移除 Clash Verge 服務需要管理員權限。
 tray:
-  dashboard: 儀表板
-  ruleMode: 規則模式
+  dashboard: 主視窗
+  ruleMode: 分流模式
   globalMode: 全域模式
   directMode: 直連模式
-  outboundModes: 出站模式
-  rule: 規則
+  outboundModes: 路由模式
+  rule: 分流
   direct: 直連
   global: 全域
   profiles: 訂閱
   proxies: 代理
   systemProxy: 系統代理
-  tunMode: 虛擬網路介面卡模式
-  closeAllConnections: 關閉所有連線
+  tunMode: Tun 模式
+  closeAllConnections: 中止所有連線
   lightweightMode: 輕量模式
   copyEnv: 複製環境變數
-  confDir: 設定目錄
-  coreDir: 核心目錄
-  logsDir: 日誌目錄
-  openDir: 開啟目錄
+  confDir: 訂閱檔案位置
+  coreDir: 核心檔案位置
+  logsDir: 日誌檔案位置
+  openDir: 開啟檔案位置
   appLog: 應用程式日誌
   coreLog: 核心日誌
   restartClash: 重新啟動 Clash 核心
   restartApp: 重新啟動應用程式
   vergeVersion: Verge 版本
   more: 更多
-  exit: 離開
+  exit: 結束應用程式
   tooltip:
     systemProxy: 系統代理
     tun: 虛擬網路介面卡

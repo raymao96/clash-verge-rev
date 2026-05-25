@@ -3,36 +3,36 @@
     "actions": {
       "manual": "使用手冊",
       "telegram": "Telegram 頻道",
-      "github": "GitHub 專案位址"
+      "github": "GitHub 專案連結"
     },
-    "title": "設定"
+    "title": "進階設定"
   },
   "sections": {
     "system": {
       "title": "系統設定",
       "toggles": {
-        "tunMode": "虛擬網路介面卡模式",
-        "systemProxy": "系統代理"
+        "tunMode": "開/關 Tun 模式",
+        "systemProxy": "開/關 系統代理"
       },
       "tooltips": {
         "silentStart": "程序啟動時以後台模式執行，不顯示程序面板"
       },
       "fields": {
-        "autoLaunch": "開機自啟",
+        "autoLaunch": "開機啟動",
         "silentStart": "靜默啟動"
       },
       "notifications": {
         "tunMode": {
-          "autoDisabled": "由於服務不可使用，虛擬網路介面卡模式已自動停用",
-          "autoDisableFailed": "自動停用虛擬網路介面卡模式失敗"
+          "autoDisabled": "由於服務模式不可用，Tun 模式已自動停用",
+          "autoDisableFailed": "自動停用 Tun 模式失敗"
         }
       }
     },
     "proxyControl": {
       "tooltips": {
-        "systemProxy": "修改作業系統的代理設定，如果開啟失敗，可手動修改作業系統的代理設定",
-        "tunMode": "TUN（虛擬網路介面卡）模式接管系統所有流量，啟用時無需開啟系統代理",
-        "tunUnavailable": "虛擬網路介面卡模式需要安裝服務模式或以系統管理員身分執行"
+        "systemProxy": "「系統代理」一般只接管「瀏覽器」網頁流量，打開「系統代理」相當於打開電腦系統裡的「代理伺服器設定」。如果您只需要瀏覽網頁，請打開此模式。",
+        "tunMode": "「Tun 模式」可接管電腦上所有應用程式的網路流量，通常用於「非瀏覽器」類型的電腦應用程式。如果您需要讓遊戲、Line 電腦版等應用程式通過 VPN 上網，請打開此模式。",
+        "tunUnavailable": "啟用 Tun 模式需先安裝服務模式或以系統管理員身分執行"
       },
       "actions": {
         "installService": "安裝服務",
@@ -40,14 +40,14 @@
       },
       "fields": {
         "systemProxy": "系統代理",
-        "tunMode": "虛擬網路介面卡模式"
+        "tunMode": "Tun 模式"
       }
     },
     "externalController": {
-      "title": "外部控制器監聽位址",
+      "title": "網頁控制台監聽位址",
       "fields": {
-        "enable": "啟用外部控制器",
-        "address": "外部控制器監聽位址",
+        "enable": "啟用網頁控制台",
+        "address": "網頁控制台監聽位址",
         "secret": "API 存取金鑰"
       },
       "placeholders": {
@@ -58,18 +58,18 @@
         "copy": "複製到剪貼簿"
       },
       "messages": {
-        "addressRequired": "控制器位址不能為空",
-        "secretRequired": "存取金鑰不能為空",
+        "addressRequired": "請填寫控制器位址",
+        "secretRequired": "請填寫存取金鑰",
         "copyFailed": "複製失敗",
         "controllerCopied": "API 連接埠已複製到剪貼簿",
         "secretCopied": "API 金鑰已複製到剪貼簿"
       }
     },
     "externalCors": {
-      "title": "外部跨來源資源共享設定",
+      "title": "網頁控制台主題設定",
       "fields": {
         "allowPrivateNetwork": "允許專用網路存取",
-        "allowedOrigins": "允許的來源"
+        "allowedOrigins": "主題來源"
       },
       "placeholders": {
         "origin": "請輸入有效的網址"
@@ -78,10 +78,10 @@
         "add": "新增"
       },
       "messages": {
-        "alwaysIncluded": "始終包含來源：{{urls}}"
+        "alwaysIncluded": "基礎主題來源：{{urls}}"
       },
       "tooltips": {
-        "open": "外部跨來源資源共享設定"
+        "open": "網頁控制台主題設定"
       }
     },
     "appearance": {
@@ -97,31 +97,31 @@
           "dnsOverwrite": "DNS 覆寫",
           "ipv6": "IPv6",
           "unifiedDelay": "統一延遲",
-          "logLevel": "日誌等級",
+          "logLevel": "日誌層級",
           "portConfig": "連接埠設定",
-          "external": "外部控制",
+          "external": "網頁控制台",
           "webUI": "網頁介面",
-          "clashCore": "Clash 內核",
+          "clashCore": "Clash 核心",
           "openUwpTool": "UWP 工具",
           "updateGeoData": "更新 GeoData",
           "tunnels": {
             "title": "流量隧道管理",
-            "localAddr": "本地監聽位址",
-            "localPort": "本地監聽連接埠",
-            "targetAddr": "目標地址",
-            "targetPort": "目標端口",
-            "proxyGroup": "代理群組",
-            "proxyNode": "代理節點",
+            "localAddr": "本機監聽位址",
+            "localPort": "本機監聽連接埠",
+            "targetAddr": "目標位址",
+            "targetPort": "目標連接埠",
+            "proxyGroup": "節點分組",
+            "proxyNode": "節點選取",
             "protocols": "協定",
             "existing": "已設定的通道",
             "default": "跟隨目前設定",
             "optional": "可選",
             "messages": {
               "incomplete": "請完整填寫通道資訊",
-              "invalidLocalAddr": "無效的本地監聽位址",
-              "invalidLocalPort": "無效的本地監聽連接埠",
-              "invalidTargetAddr": "無效的目標地址",
-              "invalidTargetPort": "無效的目標端口"
+              "invalidLocalAddr": "無效的本機監聽位址",
+              "invalidLocalPort": "無效的本機監聽連接埠",
+              "invalidTargetAddr": "無效的目標位址",
+              "invalidTargetPort": "無效的目標連接埠"
             },
             "actions": {
               "add": "新增",
@@ -132,8 +132,8 @@
         "tooltips": {
           "networkInterface": "網路介面",
           "unifiedDelay": "開啟統一延遲時，會進行兩次延遲測試，以消除連線握手等帶來的不同類型節點的延遲差異",
-          "logLevel": "僅對日誌目錄 Service 資料夾下的內核日誌檔案生效",
-          "openUwpTool": "Windows 8 開始限制 UWP 應用程式（如Microsoft Store）直接存取本機主機的網路服務，使用此工具可繞過該限制"
+          "logLevel": "僅作用於 logs/service 資料夾下的核心日誌檔案",
+          "openUwpTool": "Windows 8 開始限制 UWP 應用程式（如 Microsoft Store）直接存取本機主機的網路服務，使用此工具可繞過該限制"
         },
         "options": {
           "logLevel": {
@@ -156,13 +156,13 @@
         },
         "trayOptions": {
           "showMainWindow": "顯示主視窗",
-          "showTrayMenu": "顯示系統匣選單",
+          "showTrayMenu": "顯示工作列選單",
           "disable": "停用"
         },
         "fields": {
           "language": "語言設定",
           "themeMode": "主題模式",
-          "trayClickEvent": "系統匣點擊事件",
+          "trayClickEvent": "點選工作列圖示",
           "copyEnvType": "複製環境變數類型",
           "startPage": "啟動頁面",
           "startupScript": "啟動指令碼",
@@ -175,9 +175,9 @@
       "advanced": {
         "title": "Verge 進階設定",
         "tooltips": {
-          "backupInfo": "支援本機或 WebDAV 方式備份配置檔案",
+          "backupInfo": "支援本機或 WebDAV 方式備份設定檔",
           "openConfDir": "如果軟體執行異常，!備份!並刪除此資料夾下的所有檔案，重新啟動軟體",
-          "liteMode": "關閉圖形介面，僅保留內核執行"
+          "liteMode": "關閉圖形介面，僅保留核心執行"
         },
         "actions": {
           "copyVersion": "複製Verge版本號"
@@ -188,14 +188,14 @@
         },
         "fields": {
           "backupSetting": "備份設定",
-          "runtimeConfig": "執行期設定",
-          "openConfDir": "配置目錄",
-          "openCoreDir": "內核目錄",
-          "openLogsDir": "日誌目錄",
+          "runtimeConfig": "現用設定檔",
+          "openConfDir": "訂閱檔案位置",
+          "openCoreDir": "核心檔案位置",
+          "openLogsDir": "日誌檔案位置",
           "checkUpdates": "檢查更新",
           "openDevTools": "開發人員工具",
           "liteModeSettings": "輕量模式設定",
-          "exit": "離開",
+          "exit": "結束應用程式",
           "exportDiagnostics": "匯出診斷資訊",
           "vergeVersion": "Verge 版本"
         }
@@ -212,7 +212,7 @@
           "errorColor": "錯誤顏色",
           "successColor": "成功顏色",
           "fontFamily": "字型系列",
-          "cssInjection": "CSS 注入"
+          "cssInjection": "自訂 CSS 樣式"
         },
         "actions": {
           "editCss": "編輯 CSS"
@@ -226,26 +226,26 @@
         "fields": {
           "preferSystemTitlebar": "優先使用系統標題欄",
           "trafficGraph": "流量圖表",
-          "memoryUsage": "內核佔用",
-          "proxyGroupIcon": "代理組圖示",
-          "toastPosition": "通知位置",
-          "hoverNavigator": "懸浮跳轉導航",
-          "hoverNavigatorDelay": "懸浮跳轉導航延遲",
-          "navIcon": "導覽列圖示",
-          "collapseNavBar": "收起導覽列",
-          "trayIcon": "系統匣圖示",
-          "proxyGroupsDisplayMode": "系統匣代理組顯示模式",
-          "showOutboundModesInline": "將出站模式顯示在系統匣一級選單",
-          "commonTrayIcon": "一般系統匣圖示",
-          "systemProxyTrayIcon": "系統代理系統匣圖示",
-          "tunTrayIcon": "虛擬網路介面卡模式系統匣圖示",
-          "enableTrayIcon": "啟用系統匣圖示",
-          "enableTraySpeed": "啟用系統匣速率",
-          "pauseRenderTrafficStatsOnBlur": "失去焦點時暫停渲染流量統計"
+          "memoryUsage": "核心佔用",
+          "proxyGroupIcon": "節點分組圖示",
+          "toastPosition": "推播位置",
+          "hoverNavigator": "懸停自動導覽",
+          "hoverNavigatorDelay": "懸停導覽延遲",
+          "navIcon": "Clash 選單列圖示",
+          "collapseNavBar": "縮小 Clash 選單列",
+          "trayIcon": "工作列圖示",
+          "proxyGroupsDisplayMode": "工作列選單【節點分組】顯示方式",
+          "showOutboundModesInline": "工作列選單【路由模式】放在第一層選單",
+          "commonTrayIcon": "自訂工作列圖示（通用狀態）",
+          "systemProxyTrayIcon": "自訂工作列圖示（已啟用系統代理）",
+          "tunTrayIcon": "自訂工作列圖示（已啟用 Tun 模式）",
+          "enableTrayIcon": "啟用工作列圖示",
+          "enableTraySpeed": "啟用工作列速率顯示",
+          "pauseRenderTrafficStatsOnBlur": "切換至背景時暫停流量圖表更新"
         },
         "tooltips": {
-          "hoverNavigator": "滑鼠懸停在字母上時自動捲動到對應代理組",
-          "hoverNavigatorDelay": "滑鼠懸停後觸發自動跳轉前等待的毫秒數"
+          "hoverNavigator": "滑鼠懸停於字母時自動跳轉對應節點分組",
+          "hoverNavigatorDelay": "滑鼠懸停後的跳轉延遲時間"
         },
         "options": {
           "icon": {
@@ -331,13 +331,13 @@
       "fields": {
         "webdavUrl": "WebDAV 伺服器位址 http(s)://",
         "username": "使用者名稱",
-        "info": "在應用程式資料目錄中建立本機備份，您可以透過下方列表進行還原或刪除。"
+        "info": "在應用程式檔案夾中建立本機備份，您可以透過下方列表進行還原或刪除。"
       },
       "messages": {
-        "webdavUrlRequired": "WebDAV 伺服器位址不能為空",
+        "webdavUrlRequired": "請填寫 WebDAV 伺服器位址",
         "invalidWebdavUrl": "無效的 WebDAV 伺服器位址格式",
-        "usernameRequired": "使用者名稱不能為空",
-        "passwordRequired": "密碼不能為空",
+        "usernameRequired": "請填寫使用者名稱",
+        "passwordRequired": "請填寫密碼",
         "webdavConfigSaved": "WebDAV 配置儲存成功",
         "webdavConfigSaveFailed": "儲存 WebDAV 設定檔失敗: {{error}}",
         "backupCreated": "備份建立成功",
@@ -393,28 +393,28 @@
     "misc": {
       "title": "雜項設定",
       "fields": {
-        "appLogLevel": "應用程式日誌等級",
+        "appLogLevel": "應用程式日誌層級",
         "appLogMaxSize": "應用程式日誌最大大小",
         "appLogMaxCount": "應用程式日誌最大數量",
-        "autoCloseConnections": "自動關閉連線",
+        "autoCloseConnections": "自動中止連線",
         "autoCheckUpdate": "自動檢查更新",
         "enableBuiltinEnhanced": "內建增強功能",
-        "proxyLayoutColumns": "代理頁面欄數",
+        "proxyLayoutColumns": "節點列表欄位數量",
         "autoLogClean": "自動清理日誌",
         "autoDelayDetection": "自動延遲偵測",
-        "autoDelayDetectionInterval": "自動延遲偵測間隔",
+        "autoDelayDetectionInterval": "自動延遲偵測頻率",
         "defaultLatencyTest": "預設測試網址",
         "defaultLatencyTimeout": "測試逾時"
       },
       "tooltips": {
-        "autoCloseConnections": "當代理組選中節點或代理模式變動時，關閉已建立的連線",
-        "enableBuiltinEnhanced": "配置檔案的相容性處理",
+        "autoCloseConnections": "當代理組選中節點或代理模式變動時，中止已建立的連線",
+        "enableBuiltinEnhanced": "訂閱格式及設定檔的相容性處理",
         "autoDelayDetection": "在背景定時偵測目前節點延遲",
-        "defaultLatencyTest": "僅用於 HTTP 客戶端請求測試，不會對配置檔案產生影響"
+        "defaultLatencyTest": "僅用於 HTTP 客戶端請求測試，不會對現用設定檔產生影響"
       },
       "options": {
         "proxyLayoutColumns": {
-          "auto": "自動欄數"
+          "auto": "自動"
         },
         "autoLogClean": {
           "never": "不清理",
@@ -442,30 +442,30 @@
         "enableStatus": "啟用狀態：",
         "serverAddr": "服務位址：",
         "pacUrl": "PAC 位址：",
-        "proxyHost": "代理主機",
+        "proxyHost": "Proxy Host",
         "usePacMode": "使用 PAC 模式",
         "proxyGuard": "系統代理守護",
-        "guardDuration": "代理守護間隔",
+        "guardDuration": "系統代理守護頻率",
         "alwaysUseDefaultBypass": "始終使用預設繞過",
-        "enableBypassCheck": "驗證代理繞過格式",
-        "proxyBypass": "代理繞過設定：",
-        "bypass": "目前繞過：",
+        "enableBypassCheck": "Bypass Check",
+        "proxyBypass": "Bypass 設定：",
+        "bypass": "目前 Bypass 設定：",
         "pacScriptContent": "PAC 指令碼內容"
       },
       "tooltips": {
-        "proxyGuard": "開啟以防止其他軟體修改作業系統的代理設定"
+        "proxyGuard": "可防止誤開其他 VPN 影響到目前電腦的代理伺服器設定"
       },
       "messages": {
-        "durationTooShort": "代理守護間隔時間不得低於 1 秒",
-        "invalidBypass": "無效的代理繞過格式",
-        "invalidProxyHost": "代理主機格式無效"
+        "durationTooShort": "系統代理守護頻率最低為 1 秒",
+        "invalidBypass": "Bypass 格式無效",
+        "invalidProxyHost": "Proxy Host 格式無效"
       },
       "actions": {
         "editPac": "編輯 PAC"
       }
     },
     "tun": {
-      "title": "虛擬網路介面卡模式",
+      "title": "Tun 模式",
       "fields": {
         "stack": "虛擬網路介面卡模式堆疊",
         "device": "Device Name",
@@ -473,7 +473,7 @@
         "routeExcludeAddress": "排除自訂網段",
         "strictRoute": "嚴格路由",
         "autoDetectInterface": "自動偵測流量輸出介面",
-        "dnsHijack": "DNS 綁架",
+        "dnsHijack": "DNS Hijacking",
         "mtu": "最大傳輸單位",
         "autoRedirect": "自動重導"
       },
@@ -598,11 +598,11 @@
       },
       "title": "快速鍵設定",
       "functions": {
-        "rule": "規則模式",
+        "rule": "分流模式",
         "global": "全域模式",
-        "openOrCloseDashboard": "開啟/關閉儀表板",
-        "toggleSystemProxy": "開啟/關閉系統代理",
-        "toggleTunMode": "開啟/關閉 虛擬網路介面卡模式",
+        "openOrCloseDashboard": "開啟/關閉 儀表板",
+        "toggleSystemProxy": "開啟/關閉 系統代理",
+        "toggleTunMode": "開啟/關閉 Tun 模式",
         "entryLightweightMode": "進入輕量模式",
         "direct": "直連模式",
         "reactivateProfiles": "重新啟用訂閱"
@@ -624,11 +624,11 @@
   "feedback": {
     "notifications": {
       "clash": {
-        "restartSuccess": "已重啟 Clash 內核",
-        "versionUpdated": "內核版本已更新",
-        "alreadyLatestVersion": "已經是最新內核版本",
-        "changeSuccess": "內核切換成功",
-        "changeFailed": "無法切換內核",
+        "restartSuccess": "已重啟 Clash 核心",
+        "versionUpdated": "核心版本已更新",
+        "alreadyLatestVersion": "已經是最新核心版本",
+        "changeSuccess": "核心切換成功",
+        "changeFailed": "無法切換核心",
         "geoDataUpdated": "已更新 GeoData"
       },
       "clashService": {
@@ -643,8 +643,8 @@
   },
   "statuses": {
     "clash": {
-      "stopping": "內核停止中...",
-      "restarting": "內核重啟中..."
+      "stopping": "核心停止中...",
+      "restarting": "核心重啟中..."
     },
     "clashService": {
       "installing": "安裝服務中...",

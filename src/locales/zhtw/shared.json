@@ -8,8 +8,8 @@
     "edit": "編輯",
     "new": "新增",
     "enable": "啟用",
-    "upgrade": "升級內核",
-    "restart": "重啟內核",
+    "upgrade": "升級核心",
+    "restart": "重啟核心",
     "resetToDefault": "重設為預設值",
     "refresh": "重整",
     "retry": "重試",
@@ -44,7 +44,7 @@
     "enabled": "已啟用",
     "disabled": "已停用",
     "saving": "儲存中...",
-    "empty": "空空如也"
+    "empty": "尚無記錄"
   },
   "units": {
     "milliseconds": "毫秒",
@@ -96,9 +96,9 @@
     },
     "validation": {
       "config": {
-        "failed": "訂閱配置校驗失敗，請檢查訂閱配置文件，變更已撤銷，錯誤詳情：",
-        "bootFailed": "啟動訂閱配置校驗失敗，已使用預設配置啟動；請檢查訂閱配置文件，錯誤詳情：",
-        "coreChangeFailed": "切換內核時配置校驗失敗，已使用預設配置啟動；請檢查訂閱配置文件，錯誤詳情：",
+        "failed": "訂閱校驗失敗，請檢查訂閱格式，變更已撤銷，錯誤訊息：",
+        "bootFailed": "啟動訂閱校驗失敗，已使用預設值啟動；請檢查訂閱格式，錯誤訊息：",
+        "coreChangeFailed": "切換核心時訂閱校驗失敗，已使用預設值啟動；請檢查訂閱格式，錯誤訊息：",
         "processTerminated": "驗證程序被終止"
       },
       "script": {

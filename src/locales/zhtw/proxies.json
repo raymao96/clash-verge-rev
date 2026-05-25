@@ -1,8 +1,8 @@
 {
   "page": {
     "modes": {
-      "rule": "規則",
-      "global": "全局",
+      "rule": "分流",
+      "global": "全域",
       "direct": "直連"
     },
     "actions": {
@@ -13,15 +13,15 @@
       "clearChainConfig": "刪除鏈式設定"
     },
     "provider": {
-      "title": "代理集合",
+      "title": "節點服務商",
       "actions": {
         "updateAll": "全部更新",
         "update": "更新"
       }
     },
     "rules": {
-      "title": "代理規則",
-      "select": "選擇規則"
+      "title": "節點分組",
+      "select": "選擇節點分組"
     },
     "labels": {
       "proxyCount": "節點數量",
@@ -34,8 +34,8 @@
       "sortDelay": "按延遲排序",
       "sortName": "按名稱排序",
       "delayCheckUrl": "延遲測試網址",
-      "showBasic": "隱藏節點細節",
-      "showDetail": "展示節點細節",
+      "showBasic": "隱藏節點詳情",
+      "showDetail": "顯示節點詳情",
       "filter": "篩選節點"
     },
     "placeholders": {
@@ -43,9 +43,9 @@
     },
     "chain": {
       "header": "鏈式代理設定",
-      "warning": "鏈式代理會顯著降低網速。如果您沒有明確的業務需求，或不了解此項設定，請保持關閉",
-      "empty": "鏈式代理會顯著降低網速。如果您沒有明確的業務需求，或不了解此項設定，請保持關閉",
-      "instruction": "依序點擊節點新增到鏈式代理中",
+      "warning": "鏈式代理會顯著降低網速。如果您沒有明確的業務需求，或不了解此功能，請保持關閉。",
+      "empty": "鏈式代理會顯著降低網速。如果您沒有明確的業務需求，或不了解此功能，請保持關閉。",
+      "instruction": "依序點選節點新增到鏈式代理中",
       "minimumNodes": "鏈式代理至少需要 2 個節點",
       "minimumNodesHint": "鏈式代理至少需要 2 個節點，請再新增一個節點。",
       "connectFailed": "連線鏈式代理失敗",
@@ -58,7 +58,7 @@
       "directMode": "直連模式"
     },
     "title": {
-      "default": "代理組",
+      "default": "節點列表",
       "chainMode": "鏈式代理模式"
     }
   },
@@ -76,11 +76,11 @@
   "components": {
     "enums": {
       "strategies": {
-        "select": "手動選擇代理",
-        "url-test": "根據網址測試延遲選擇代理",
-        "fallback": "切換至另一個備用代理",
-        "load-balance": "根據負載平衡分配代理",
-        "relay": "根據定義的代理鏈傳送"
+        "select": "手動選擇節點",
+        "url-test": "根據延遲測試結果選擇節點",
+        "fallback": "切換至另一個備用節點",
+        "load-balance": "根據負載均衡分配節點",
+        "relay": "根據定義的節點鏈傳送"
       },
       "policies": {
         "DIRECT": "直接連線 (DIRECT)",

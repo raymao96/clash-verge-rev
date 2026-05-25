@@ -1,7 +1,7 @@
 {
   "page": {
     "actions": {
-      "testAll": "測試全部"
+      "testAll": "一鍵測試"
     },
     "title": "測試"
   },
@@ -32,8 +32,8 @@
       "completed": "檢測完成",
       "disallowedIsp": "不允許的網際網路服務供應商",
       "originalsOnly": "僅限原創",
-      "noDisney": "不支援（IP被Disney+禁止）",
-      "unsupportedRegion": "不支援的國家/地區",
+      "noDisney": "不支援（IP 被禁）",
+      "unsupportedRegion": "不支援（區域受限）",
       "failedNetwork": "測試失敗（網路連線問題）"
     }
   },
@@ -42,12 +42,12 @@
       "actions": {
         "testing": "測試中..."
       },
-      "empty": "目前沒有解鎖測試項目",
+      "empty": "目前沒有可測試的目標",
       "messages": {
         "detectionFailedWithName": "{{name}} 檢測失敗",
         "detectionTimeout": "檢測逾時或失敗"
       },
-      "title": "解鎖測試"
+      "title": "影音解鎖測試（請先啟動連線再測）"
     }
   }
 }

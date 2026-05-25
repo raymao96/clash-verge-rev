@@ -14,7 +14,6 @@ import {
   openLogsDir,
 } from '@/services/cmds'
 import { showNotice } from '@/services/notice-service'
-import { checkUpdateSafe as checkUpdate } from '@/services/update'
 import { version } from '@root/package.json'
 
 import { BackupViewer } from './mods/backup-viewer'
@@ -42,22 +41,6 @@ const SettingVergeAdvanced = ({ onError: _ }: Props) => {
   const updateRef = useRef<DialogRef>(null)
   const backupRef = useRef<DialogRef>(null)
   const liteModeRef = useRef<DialogRef>(null)
-
-  const onCheckUpdate = async () => {
-    try {
-      const info = await checkUpdate()
-      updateLastCheckTime()
-      if (!info?.available) {
-        showNotice.success(
-          'settings.components.verge.advanced.notifications.latestVersion',
-        )
-      } else {
-        updateRef.current?.open()
-      }
-    } catch (err: any) {
-      showNotice.error(err)
-    }
-  }
 
   const onExportDiagnosticInfo = useCallback(async () => {
     await exportDiagnosticInfo()
@@ -119,11 +102,6 @@ const SettingVergeAdvanced = ({ onError: _ }: Props) => {
       <SettingItem
         onClick={openLogsDir}
         label={t('settings.components.verge.advanced.fields.openLogsDir')}
-      />
-
-      <SettingItem
-        onClick={onCheckUpdate}
-        label={t('settings.components.verge.advanced.fields.checkUpdates')}
       />
 
       <SettingItem

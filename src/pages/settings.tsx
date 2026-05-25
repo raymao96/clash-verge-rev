@@ -25,7 +25,6 @@ const SettingPage = () => {
   return (
     <BasePage
       title={t('settings.page.title')}
-      header={}
     >
       <Grid container spacing={1.5} columns={{ xs: 6, sm: 6, md: 12 }}>
         <Grid size={6}>

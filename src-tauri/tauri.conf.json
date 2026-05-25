@@ -31,11 +31,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM5MkMwREE0NkY5RkEwN0EKUldSNm9KOXZwQTBzeWMzWCtKRFVuenk3eGxidDhDUlRKRFdUT3BJZjVSZDV5UURWeVlhK1BlNU0K",
-      "endpoints": [
-        "https://update.hwdns.net/https://github.com/clash-verge-rev/clash-verge-rev/releases/download/updater/update-proxy.json",
-        "https://gh-proxy.org/https://github.com/clash-verge-rev/clash-verge-rev/releases/download/updater/update-proxy.json",
-        "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/updater/update.json"
-      ],
+      "endpoints": [],
       "windows": {
         "installMode": "passive"
       }

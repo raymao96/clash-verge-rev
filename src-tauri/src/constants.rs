@@ -8,9 +8,9 @@ pub mod network {
         pub const DEFAULT_REDIR: u16 = 7895;
         #[cfg(target_os = "linux")]
         pub const DEFAULT_TPROXY: u16 = 7896;
-        pub const DEFAULT_MIXED: u16 = 7897;
-        pub const DEFAULT_SOCKS: u16 = 7898;
-        pub const DEFAULT_HTTP: u16 = 7899;
+        pub const DEFAULT_MIXED: u16 = 7890;
+        pub const DEFAULT_SOCKS: u16 = 1080;
+        pub const DEFAULT_HTTP: u16 = 1087;
 
         #[cfg(not(feature = "verge-dev"))]
         pub const SINGLETON_SERVER: u16 = 33331;

@@ -37,11 +37,6 @@ export const SystemInfoCard = () => {
 
   const [osInfo, setOsInfo] = useState('')
 
-  const lastCheckUpdateText = useMemo(
-    () => (lastCheckUpdate ? new Date(lastCheckUpdate).toLocaleString() : '-'),
-    [lastCheckUpdate],
-  )
-
   // 初始化系统信息
   useEffect(() => {
     getSystemInfo()
@@ -97,24 +92,6 @@ export const SystemInfoCard = () => {
       installServiceAndRestartCore()
     }
   }, [isSidecarMode, isAdminMode, installServiceAndRestartCore])
-
-  // 检查更新
-  const onCheckUpdate = useLockFn(async () => {
-    try {
-      const result = await triggerCheckUpdate()
-      const info = result.data
-      if (!info?.available) {
-        showNotice.success(
-          'settings.components.verge.advanced.notifications.latestVersion',
-        )
-      } else {
-        showNotice.info('shared.feedback.notifications.updateAvailable', 2000)
-        goToSettings()
-      }
-    } catch (err) {
-      showNotice.error(err)
-    }
-  })
 
   // 是否启用自启动
   const autoLaunchEnabled = useMemo(
@@ -261,24 +238,6 @@ export const SystemInfoCard = () => {
           >
             {getModeIcon()}
             {getModeText()}
-          </Typography>
-        </Stack>
-        <Divider />
-        <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="body2" color="text.secondary">
-            {t('home.components.systemInfo.fields.lastCheckUpdate')}
-          </Typography>
-          <Typography
-            variant="body2"
-            onClick={onCheckUpdate}
-            sx={{
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              fontWeight: 'medium',
-              '&:hover': { opacity: 0.7 },
-            }}
-          >
-            {lastCheckUpdateText}
           </Typography>
         </Stack>
         <Divider />

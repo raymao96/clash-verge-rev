@@ -377,11 +377,6 @@ const HomePage = () => {
               <HistoryEduOutlined />
             </IconButton>
           </Tooltip>
-          <Tooltip title={t('home.page.tooltips.manual')} arrow>
-            <IconButton onClick={toGithubDoc} size="small" color="inherit">
-              <HelpOutlineRounded />
-            </IconButton>
-          </Tooltip>
           <Tooltip title={t('home.page.tooltips.settings')} arrow>
             <IconButton onClick={openSettings} size="small" color="inherit">
               <SettingsOutlined />

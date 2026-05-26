@@ -54,6 +54,7 @@ import LogsPage from './logs'
 
 import 'dayjs/locale/ru'
 import 'dayjs/locale/zh-cn'
+import 'dayjs/locale/zh-tw'
 
 export const portableFlag = false
 
@@ -236,7 +237,7 @@ const Layout = () => {
 
   useEffect(() => {
     if (language) {
-      dayjs.locale(language === 'zh' ? 'zh-cn' : language)
+      dayjs.locale(language === 'zh' ? 'zh-cn' : language === 'zhtw' ? 'zh-tw' : language)
       switchLanguage(language)
     }
   }, [language, switchLanguage])

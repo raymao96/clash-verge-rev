@@ -130,7 +130,7 @@ const SettingVergeBasic = ({ onError }: Props) => {
             onChange={(e) => onChangeData({ tray_event: e })}
             onGuard={(e) => patchVerge({ tray_event: e })}
           >
-            <Select size="small" sx={{ width: 140, '> div': { py: '7.5px' } }}>
+            <Select size="small" sx={{ width: 180, '> div': { py: '7.5px' } }}>
               <MenuItem value="main_window">
                 {t(
                   'settings.components.verge.basic.trayOptions.showMainWindow',

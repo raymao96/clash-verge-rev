@@ -155,7 +155,7 @@
           "browse": "Browse"
         },
         "trayOptions": {
-          "showMainWindow": "Show Main Window",
+          "showMainWindow": "Open Dashboard",
           "showTrayMenu": "Show Tray Menu",
           "disable": "Disable"
         },

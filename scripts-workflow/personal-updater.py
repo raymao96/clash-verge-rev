@@ -6,6 +6,7 @@ import os
 import re
 import sys
 from pathlib import Path
+from urllib.parse import quote
 from urllib.request import urlopen
 
 parser = argparse.ArgumentParser()
@@ -64,7 +65,10 @@ def create_manifest(mapping, filename):
         url = assets[name]['browser_download_url']
         sig_url = signature['browser_download_url']
         prefix = f'https://github.com/{repository}/releases/download/{tag}/'
-        if not url.startswith(prefix) or not sig_url.startswith(prefix):
+        if release['draft'] and args.signature_dir:
+            url = prefix + quote(name, safe='')
+            sig_url = prefix + quote(name + '.sig', safe='')
+        elif not url.startswith(prefix) or not sig_url.startswith(prefix):
             raise SystemExit(f'Unexpected asset URL for {name}')
         if args.signature_dir:
             sig = (args.signature_dir / (name + '.sig')).read_text().strip()

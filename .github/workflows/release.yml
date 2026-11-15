@@ -149,7 +149,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > /tmp/personal-release.json
+          gh api "repos/$GITHUB_REPOSITORY/releases/${{ needs.prepare_release.outputs.release_id }}" > /tmp/personal-release.json
           mkdir -p /tmp/release-signatures
           gh release download "$RELEASE_TAG" --pattern '*.sig' --dir /tmp/release-signatures
           python3 scripts-workflow/personal-updater.py /tmp/personal-release.json --allow-draft --signature-dir /tmp/release-signatures

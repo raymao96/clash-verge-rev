@@ -1,15 +1,30 @@
+import argparse
+import base64
+from datetime import datetime, timezone
 import json
 import os
 import re
 import sys
+from pathlib import Path
 from urllib.request import urlopen
 
-with open(sys.argv[1], encoding='utf-8') as file:
+parser = argparse.ArgumentParser()
+parser.add_argument('release')
+parser.add_argument('--signature-dir', type=Path)
+parser.add_argument('--allow-missing', action='store_true')
+parser.add_argument('--allow-draft', action='store_true')
+args = parser.parse_args()
+
+with open(args.release, encoding='utf-8') as file:
     release = json.load(file)
+
+config = json.loads((Path(__file__).resolve().parents[1] / 'src-tauri/tauri.conf.json').read_text())
+public_key = base64.b64decode(config['plugins']['updater']['pubkey']).decode().splitlines()[1]
+key_id = base64.b64decode(public_key)[2:10]
 
 repository = os.environ['GITHUB_REPOSITORY']
 tag = release['tag_name']
-if repository != 'raymao96/clash-verge-rev' or release['draft'] or release['prerelease'] or not re.fullmatch(r'v\d+\.\d+\.\d+', tag):
+if repository != 'raymao96/clash-verge-rev' or (release['draft'] and not args.allow_draft) or release['prerelease'] or not re.fullmatch(r'v\d+\.\d+\.\d+', tag):
     raise SystemExit('Update manifests require a published personal stable release')
 
 assets = {asset['name']: asset for asset in release['assets']}
@@ -34,22 +49,37 @@ def create_manifest(mapping, filename):
     entries = {}
     for platform, suffix in mapping.items():
         matches = [name for name in assets if name.endswith(suffix)]
+        if not matches and args.allow_missing:
+            print(f'Skipping {platform}: asset missing', file=sys.stderr)
+            continue
         if len(matches) != 1:
             raise SystemExit(f'Expected one {platform} asset, found {matches}')
         name = matches[0]
         signature = assets.get(name + '.sig')
         if not signature:
+            if args.allow_missing:
+                print(f'Skipping {platform}: signature missing', file=sys.stderr)
+                continue
             raise SystemExit(f'Missing signature for {name}')
         url = assets[name]['browser_download_url']
         sig_url = signature['browser_download_url']
         prefix = f'https://github.com/{repository}/releases/download/{tag}/'
         if not url.startswith(prefix) or not sig_url.startswith(prefix):
             raise SystemExit(f'Unexpected asset URL for {name}')
-        with urlopen(sig_url) as response:
-            sig = response.read().decode('utf-8').strip()
-        if not sig:
-            raise SystemExit(f'Empty signature for {name}')
+        if args.signature_dir:
+            sig = (args.signature_dir / (name + '.sig')).read_text().strip()
+        else:
+            with urlopen(sig_url) as response:
+                sig = response.read().decode('utf-8').strip()
+        try:
+            signature_key_id = base64.b64decode(base64.b64decode(sig).decode().splitlines()[1])[2:10]
+        except (ValueError, IndexError, UnicodeDecodeError) as error:
+            raise SystemExit(f'Invalid signature for {name}: {error}') from error
+        if signature_key_id != key_id:
+            raise SystemExit(f'Signature key does not match configured public key: {name}')
         entries[platform] = {'signature': sig, 'url': url}
+    if not entries:
+        raise SystemExit(f'No signed platforms for {filename}')
     for platform, entry in list(entries.items()):
         if platform.startswith('darwin-'):
             entries[platform + '-app'] = entry
@@ -58,7 +88,7 @@ def create_manifest(mapping, filename):
         elif platform.endswith('-deb'):
             entries[platform[:-4]] = entry
     manifest = {'version': tag[1:], 'notes': release.get('body') or '',
-                'pub_date': release['published_at'], 'platforms': entries}
+                'pub_date': release['published_at'] or datetime.now(timezone.utc).isoformat(), 'platforms': entries}
     with open(filename, 'w', encoding='utf-8') as file:
         json.dump(manifest, file, ensure_ascii=False, indent=2)
 

@@ -145,6 +145,16 @@ jobs:
           SOURCE_SHA: ${{ needs.prepare_release.outputs.source_sha }}
         run: node scripts-workflow/release.mjs verify-target
 
+      - name: Generate and upload update manifests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > /tmp/personal-release.json
+          mkdir -p /tmp/release-signatures
+          gh release download "$RELEASE_TAG" --pattern '*.sig' --dir /tmp/release-signatures
+          python3 scripts-workflow/personal-updater.py /tmp/personal-release.json --allow-draft --signature-dir /tmp/release-signatures
+          gh release upload "$RELEASE_TAG" latest.json latest-fixed-webview2.json --clobber
+
       - name: Publish Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -179,13 +189,6 @@ jobs:
               -F draft=false --silent
           fi
 
-      - name: Generate and upload update manifests
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > /tmp/personal-release.json
-          python3 scripts-workflow/personal-updater.py /tmp/personal-release.json
-          gh release upload "$RELEASE_TAG" latest.json latest-fixed-webview2.json --clobber
 
   release:
     name: Release Build

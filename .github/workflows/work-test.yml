@@ -61,9 +61,12 @@ jobs:
               gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id" --silent
             done <<< "$asset_ids"
           else
-            gh release create "$TAG" --target "$GITHUB_SHA" --draft --prerelease --title 'Clash Verge Rev Alpha' --notes 'Test build only; excluded from automatic updates.'
-            release_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '.[] | select(.tag_name == "work-alpha") | .id')
-            [ -n "$release_id" ] || { echo '::error::Failed to find the Alpha draft release.'; exit 1; }
+            release_id=$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA" \
+              -f name='Clash Verge Rev Alpha' \
+              -f body='Test build only; excluded from automatic updates.' \
+              -F draft=true -F prerelease=true --jq .id)
+            [ -n "$release_id" ] || { echo '::error::Failed to create the Alpha draft release.'; exit 1; }
           fi
           echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "source_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"

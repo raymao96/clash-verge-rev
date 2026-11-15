@@ -15,7 +15,7 @@
         "profile": "訂閱卡",
         "currentProxy": "目前代理卡",
         "network": "網路設定卡",
-        "proxyMode": "代理模式卡",
+        "proxyMode": "路由模式卡",
         "traffic": "流量統計卡",
         "tests": "網站測試卡",
         "ip": "IP 資訊卡",
@@ -121,7 +121,7 @@
         "uploadSpeed": "上傳速度",
         "downloadSpeed": "下載速度",
         "activeConnections": "活躍中連線",
-        "memoryUsage": "佔用"
+        "memoryUsage": "記憶體用量"
       },
       "legends": {
         "upload": "上傳",

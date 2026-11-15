@@ -421,7 +421,7 @@
         "defaultLatencyTimeout": "測試逾時"
       },
       "tooltips": {
-        "autoCloseConnections": "當代理組選中節點或代理模式變動時，中止已建立的連線",
+        "autoCloseConnections": "當已選節點或路由模式變動時，中止已建立的連線",
         "enableBuiltinEnhanced": "訂閱格式及設定檔的相容性處理",
         "autoDelayDetection": "在背景定時偵測目前節點延遲",
         "defaultLatencyTest": "僅用於 HTTP 客戶端請求測試，不會對現用設定檔產生影響"

@@ -12,7 +12,7 @@ const readLastCheckTime = (): number | null => {
   return isNaN(ts) ? null : ts
 }
 
-export const updateLastCheckTime = (timestamp?: number): number => {
+const updateLastCheckTime = (timestamp?: number): number => {
   const now = timestamp ?? Date.now()
   localStorage.setItem(LAST_CHECK_KEY, now.toString())
   setCacheData([LAST_CHECK_KEY], now)

@@ -6,6 +6,7 @@ on:
   workflow_run:
     workflows: [Frontend Check, Clippy Lint, Check Formatting]
     types: [completed]
+    branches: ['renovate/**']
 
 permissions:
   contents: read

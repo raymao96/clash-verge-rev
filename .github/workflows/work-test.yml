@@ -21,13 +21,12 @@ jobs:
       release_tag: ${{ steps.source.outputs.release_tag }}
       source_sha: ${{ steps.source.outputs.source_sha }}
       channel: ${{ steps.source.outputs.channel }}
-      release_id: ${{ steps.draft.outputs.id }}
-      release_created: ${{ steps.draft.outputs.created }}
+      release_id: ${{ steps.source.outputs.release_id }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Create test draft
+      - name: Prepare Alpha release
         id: source
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -35,19 +34,41 @@ jobs:
           if [ "$GITHUB_REF" != "refs/heads/work" ]; then
             echo '::error::Test builds must be run from work.'; exit 1
           fi
-          TAG="work-test-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent
-          gh release create "$TAG" --target "$GITHUB_SHA" --draft --prerelease --title "Work test $TAG" --notes 'Test build only; excluded from automatic updates.'
+          TAG=work-alpha
+          LEGACY_TAG=work-test-43685017979-1
+          releases=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '.[] | select(.tag_name == "work-alpha" or .tag_name == "work-test-43685017979-1") | [.id, .tag_name, .prerelease] | @tsv')
+          alpha=$(printf '%s\n' "$releases" | awk -F '\t' '$2 == "work-alpha" {print}')
+          legacy=$(printf '%s\n' "$releases" | awk -F '\t' '$2 == "work-test-43685017979-1" {print}')
+          if [ -n "$alpha" ]; then
+            IFS=$'\t' read -r release_id _ prerelease <<< "$alpha"
+            [ "$prerelease" = true ] || { echo '::error::Alpha release is not a prerelease.'; exit 1; }
+          elif [ -n "$legacy" ]; then
+            IFS=$'\t' read -r release_id _ prerelease <<< "$legacy"
+            [ "$prerelease" = true ] || { echo '::error::Legacy release is not a prerelease.'; exit 1; }
+          else
+            release_id=''
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            [ -n "$alpha" ] || { echo '::error::The work-alpha tag already exists without its release.'; exit 1; }
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" -f sha="$GITHUB_SHA" -F force=true --silent
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent
+          fi
+          if [ -n "$release_id" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" -f tag_name="$TAG" -f name='Clash Verge Rev Alpha' -F draft=true -F prerelease=true --silent
+            asset_ids=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" --jq '.[].id')
+            while read -r asset_id; do
+              [ -n "$asset_id" ] || continue
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id" --silent
+            done <<< "$asset_ids"
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --draft --prerelease --title 'Clash Verge Rev Alpha' --notes 'Test build only; excluded from automatic updates.'
+            release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq .id)
+          fi
           echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "source_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
           echo "channel=test" >> "$GITHUB_OUTPUT"
-      - name: Record test release
-        id: draft
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "id=$(gh api 'repos/{owner}/{repo}/releases/tags/${{ steps.source.outputs.release_tag }}' --jq .id)" >> "$GITHUB_OUTPUT"
-          echo 'created=true' >> "$GITHUB_OUTPUT"
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
 
   update_tag:
     name: Publish Completed Release
@@ -130,17 +151,12 @@ jobs:
 
           echo "Publishing release $release_id ($release_url) with $asset_count assets."
 
-          if [ "${{ needs.prepare_release.outputs.release_created }}" = 'true' ]; then
-            gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
-              -f name="Clash Verge Rev $TAG_NAME" \
-              -F body=@release.txt \
-              -F draft=false \
-              -F prerelease="$PRERELEASE" \
-              --silent
-          elif [ "$release_draft" = 'true' ]; then
-            gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
-              -F draft=false --silent
-          fi
+          gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
+            -f name="Clash Verge Rev Alpha" \
+            -F body=@release.txt \
+            -F draft=false \
+            -F prerelease="$PRERELEASE" \
+            --silent
 
   release:
     name: Release Build

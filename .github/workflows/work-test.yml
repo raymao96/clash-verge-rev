@@ -1,0 +1,244 @@
+name: Work Test Build
+
+on:
+  workflow_dispatch:
+permissions: write-all
+env:
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: short
+  HUSKY: 0
+concurrency:
+  group: work-test-publication
+  cancel-in-progress: false
+
+jobs:
+  prepare_release:
+    name: Prepare Personal Draft Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release_tag: ${{ steps.source.outputs.release_tag }}
+      source_sha: ${{ steps.source.outputs.source_sha }}
+      channel: ${{ steps.source.outputs.channel }}
+      release_id: ${{ steps.source.outputs.release_id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Prepare Alpha release
+        id: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/work" ]; then
+            echo '::error::Test builds must be run from work.'; exit 1
+          fi
+          TAG=work-alpha
+          LEGACY_TAG=work-test-43685017979-1
+          releases=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '.[] | select(.tag_name == "work-alpha" or .tag_name == "work-test-43685017979-1") | [.id, .tag_name, .prerelease] | @tsv')
+          alpha=$(printf '%s\n' "$releases" | awk -F '\t' '$2 == "work-alpha" {print}')
+          legacy=$(printf '%s\n' "$releases" | awk -F '\t' '$2 == "work-test-43685017979-1" {print}')
+          if [ -n "$alpha" ]; then
+            IFS=$'\t' read -r release_id _ prerelease <<< "$alpha"
+            [ "$prerelease" = true ] || { echo '::error::Alpha release is not a prerelease.'; exit 1; }
+          elif [ -n "$legacy" ]; then
+            IFS=$'\t' read -r release_id _ prerelease <<< "$legacy"
+            [ "$prerelease" = true ] || { echo '::error::Legacy release is not a prerelease.'; exit 1; }
+          else
+            release_id=''
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" -f sha="$GITHUB_SHA" -F force=true --silent
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent
+          fi
+          if [ -n "$release_id" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" -f tag_name="$TAG" -f name='Clash Verge Rev Alpha' -F draft=true -F prerelease=true --silent
+            asset_ids=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" --jq '.[].id')
+            while read -r asset_id; do
+              [ -n "$asset_id" ] || continue
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id" --silent
+            done <<< "$asset_ids"
+          else
+            release_id=$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA" \
+              -f name='Clash Verge Rev Alpha' \
+              -f body='Test build only; excluded from automatic updates.' \
+              -F draft=true -F prerelease=true --jq .id)
+            [ -n "$release_id" ] || { echo '::error::Failed to create the Alpha draft release.'; exit 1; }
+          fi
+          echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          echo "channel=test" >> "$GITHUB_OUTPUT"
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
+
+  update_tag:
+    name: Publish Completed Release
+    env:
+      RELEASE_TAG: ${{ needs.prepare_release.outputs.release_tag }}
+    outputs:
+      source_sha: ${{ needs.prepare_release.outputs.source_sha }}
+      channel: ${{ needs.prepare_release.outputs.channel }}
+    runs-on: ubuntu-latest
+    needs: [prepare_release, release]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare_release.outputs.source_sha }}
+
+      - name: Group changelog platforms
+        run: bash ./scripts-workflow/group_platforms.sh
+
+      - name: Fetch UPDATE logs
+        id: fetch_update_logs
+        run: bash ./scripts/extract_update_logs.sh
+        shell: bash
+
+      - name: Set Env
+        run: |
+          echo "BUILDTIME=$(TZ=Asia/Shanghai date)" >> $GITHUB_ENV
+          TAG_REF="$RELEASE_TAG"
+          echo "TAG_NAME=$TAG_REF" >> $GITHUB_ENV
+          VERSION=$(echo "$TAG_REF" | sed 's/^v//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "DOWNLOAD_URL=https://github.com/${{ github.repository }}/releases/download/$TAG_REF" >> $GITHUB_ENV
+        shell: bash
+
+      - run: |
+          if [ -z "$UPDATE_LOGS" ]; then
+            echo "No update logs found, using default message"
+            UPDATE_LOGS="More new features are now supported. Check for detailed changelog soon."
+          else
+            echo "Using found update logs"
+          fi
+
+          cat > release.txt << EOF
+          $UPDATE_LOGS
+
+          Created at ${{ env.BUILDTIME }}.
+          EOF
+
+      - name: Verify release tag still points to the approved source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_SHA: ${{ needs.prepare_release.outputs.source_sha }}
+        run: node scripts-workflow/release.mjs verify-target
+
+      - name: Publish Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: true
+        run: |
+          release_id="${{ needs.prepare_release.outputs.release_id }}"
+
+          if [ -z "$release_id" ]; then
+            echo "::error::No prepared release ID found for $TAG_NAME."
+            exit 1
+          fi
+
+          release_info=$(gh api repos/{owner}/{repo}/releases/"$release_id" --jq '[.tag_name, .draft, (.assets | length), .html_url] | @tsv')
+          IFS=$'\t' read -r release_tag release_draft asset_count release_url <<< "$release_info"
+
+          if [ "$release_tag" != "$TAG_NAME" ]; then
+            echo "::error::Prepared release $release_id belongs to $release_tag, expected $TAG_NAME."
+            exit 1
+          fi
+
+          echo "Publishing release $release_id ($release_url) with $asset_count assets."
+
+          gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
+            -f name="Clash Verge Rev Alpha" \
+            -F body=@release.txt \
+            -F draft=false \
+            -F prerelease="$PRERELEASE" \
+            --silent
+
+  release:
+    name: Release Build
+    needs: [prepare_release]
+    env:
+      RELEASE_TAG: ${{ needs.prepare_release.outputs.release_tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-latest
+            target: x86_64-apple-darwin
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare_release.outputs.source_sha }}
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.99.1'
+          targets: ${{ matrix.target }}
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/dev' }}
+          prefix-key: 'v1-rust'
+          shared-key: 'rust-shared-stable-${{ matrix.os }}-${{ matrix.target }}'
+          workspaces: |
+            . -> target
+          cache-all-crates: true
+          cache-workspace-crates: true
+
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26.13.1'
+          cache: 'pnpm'
+
+      - name: Pnpm install and check
+        run: |
+          pnpm i
+          pnpm run prebuild ${{ matrix.target }}
+
+      - name: Tauri build
+        uses: tauri-apps/tauri-action@v1.0.0
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ needs.prepare_release.outputs.release_id }}
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseBody: 'Draft release, will be updated later.'
+          releaseDraft: true
+          prerelease: true
+          releaseCommitish: ${{ needs.prepare_release.outputs.source_sha }}
+          tauriScript: pnpm
+          args: --target ${{ matrix.target }}
+          uploadUpdaterJson: false
+
+      - name: Attest Windows bundles
+        if: matrix.os == 'windows-latest'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: target/${{ matrix.target }}/release/bundle/nsis/*setup*
+
+      - name: Attest macOS bundles
+        if: matrix.os == 'macos-latest'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: target/${{ matrix.target }}/release/bundle/dmg/*.dmg

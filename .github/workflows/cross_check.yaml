@@ -1,10 +1,11 @@
 name: Cross Platform Cargo Check
 
 on:
+  push:
+    branches: [work]
+    paths-ignore:
+      - 'worklogs/**'
   workflow_dispatch:
-#   pull_request:
-#   push:
-# branches: [main, dev]
 
 permissions:
   contents: read
@@ -31,6 +32,12 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
+
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxslt1.1 libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 
       - name: Install Rust Stable
         uses: dtolnay/rust-toolchain@stable

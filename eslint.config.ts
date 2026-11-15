@@ -125,6 +125,7 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: {
         projectService: {
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 64,
           allowDefaultProject: [
             'eslint.config.ts',
             `vite.config.mts`,

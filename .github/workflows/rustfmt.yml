@@ -5,6 +5,10 @@
 name: Check Formatting
 
 on:
+  push:
+    branches: [work]
+    paths-ignore:
+      - 'worklogs/**'
   pull_request:
     paths:
       - "src-tauri/**"

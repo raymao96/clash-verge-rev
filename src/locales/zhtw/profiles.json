@@ -2,8 +2,8 @@
   "page": {
     "actions": {
       "updateAll": "更新所有訂閱",
-      "viewRuntimeConfig": "查看執行時訂閱",
-      "reactivate": "重新啟用訂閱",
+      "viewRuntimeConfig": "瀏覽現用訂閱檔",
+      "reactivate": "重啟訂閱",
       "import": "匯入"
     },
     "batch": {
@@ -17,77 +17,77 @@
         "selected": "已選取",
         "items": "項目"
       },
-      "title": "批次操作"
+      "title": "批次執行"
     },
     "importForm": {
-      "placeholder": "訂閱檔網址",
+      "placeholder": "貼上訂閱連結",
       "actions": {
         "paste": "貼上"
       }
     },
     "feedback": {
       "errors": {
-        "invalidUrl": "無效的訂閱網址，請輸入以 http:// 或 https:// 開頭的位址",
+        "invalidUrl": "無效的訂閱網址，請輸入以 http:// 或 https:// 開頭的網址",
         "onlyYaml": "僅支援 YAML 檔案",
-        "createFailed": "建立訂閱失敗",
-        "deleteFailed": "刪除訂閱失敗",
-        "enhanceFailed": "重新啟用訂閱失敗",
-        "importFailed": "匯入訂閱失敗",
-        "openFailed": "開啟訂閱失敗",
-        "readFailed": "讀取訂閱失敗",
-        "reorderFailed": "調整訂閱順序失敗",
-        "switchFailed": "切換訂閱失敗",
-        "updateFailed": "更新訂閱失敗"
+        "createFailed": "無法建立訂閱",
+        "deleteFailed": "無法刪除訂閱",
+        "enhanceFailed": "無法重啟訂閱",
+        "importFailed": "無法匯入訂閱",
+        "openFailed": "無法開啟訂閱",
+        "readFailed": "無法讀取訂閱",
+        "reorderFailed": "無法調整訂閱順序",
+        "switchFailed": "無法切換訂閱",
+        "updateFailed": "無法更新訂閱"
       },
       "notifications": {
         "importRetry": "訂閱匯入失敗，嘗試使用 Clash 代理匯入",
         "importFail": "使用 Clash 代理匯入訂閱也失敗",
-        "importNeedsRefresh": "Profile imported but may need manual refresh",
-        "importSuccess": "Profile imported successfully, please restart if not visible",
+        "importNeedsRefresh": "訂閱已匯入，但需要手動更新",
+        "importSuccess": "訂閱匯入成功，如果您看不到訂閱檔請重啟 App",
         "profileSwitched": "訂閱已切換",
         "profileReactivated": "訂閱已啟用",
-        "switchBusy": "正在切換配置，請稍後重試",
+        "switchBusy": "正在切換設定檔，請稍後再試",
         "batchDeleted": "選取的訂閱已成功刪除"
       },
       "notices": {
-        "forceRefreshCompleted": "Force refresh completed",
+        "forceRefreshCompleted": "已強制更新",
         "discardedKeys": "擴充設定或腳本寫入了由應用程式設定接管的欄位 {{keys}}，這些值已被捨棄",
-        "emergencyRefreshFailed": "Emergency refresh failed: {{message}}"
+        "emergencyRefreshFailed": "緊急更新失敗： {{message}}"
       },
       "tooltips": {
-        "forceRefreshStaleData": "訂閱資料異常，點擊強制重新整理"
+        "forceRefreshStaleData": "訂閱數據異常，點選強制重新整理"
       }
     },
-    "title": "訂閱"
+    "title": "節點訂閱"
   },
   "components": {
     "card": {
       "labels": {
-        "clickToImport": "點擊匯入訂閱"
+        "clickToImport": "點選匯入訂閱"
       }
     },
     "fileInput": {
       "chooseFile": "選擇檔案"
     },
     "menu": {
-      "home": "首 頁",
-      "select": "使用",
-      "shareQrCode": "Share QR Code",
-      "editInfo": "編輯資訊",
-      "editFile": "編輯檔案",
+      "home": "控制中心",
+      "select": "啟用此訂閱",
+      "shareQrCode": "分享 QR Code",
+      "editInfo": "編輯訂閱設定",
+      "editFile": "編輯訂閱檔案",
       "editRules": "編輯規則",
       "editProxies": "編輯節點",
-      "editGroups": "編輯代理組",
+      "editGroups": "編輯節點分組",
       "extendConfig": "擴充覆寫設定",
       "extendScript": "擴充指令碼",
       "openFile": "開啟檔案",
       "update": "更新",
-      "updateViaProxy": "更新（代理）"
+      "updateViaProxy": "更新（透過代理）"
     },
     "more": {
       "global": {
-        "merge": "Global Extend Config",
-        "script": "Global Extend Script"
+        "merge": "全域擴充覆寫設定",
+        "script": "全域擴充指令碼"
       },
       "chips": {
         "merge": "Merge",
@@ -96,8 +96,8 @@
     },
     "profileItem": {
       "tooltips": {
-        "showLast": "Click to show last update time",
-        "showNext": "Click to show next update"
+        "showLast": "點選以顯示最後更新時間",
+        "showNext": "點選以顯示下一次更新"
       },
       "status": {
         "lastUpdateFailed": "上次更新失敗",
@@ -111,8 +111,8 @@
   "modals": {
     "profileForm": {
       "title": {
-        "create": "新增設定檔",
-        "edit": "編輯設定檔"
+        "create": "新增訂閱",
+        "edit": "編輯訂閱"
       },
       "fields": {
         "type": "類型",
@@ -122,7 +122,7 @@
         "httpTimeout": "HTTP Request Timeout",
         "updateInterval": "更新間隔",
         "useSystemProxy": "使用系統代理更新",
-        "useClashProxy": "使用內核代理更新",
+        "useClashProxy": "使用 Clash 代理更新",
         "acceptInvalidCerts": "允許無效憑證（危險）",
         "allowAutoUpdate": "允許自動更新"
       },
@@ -134,10 +134,10 @@
         "typeRequired": "請選擇訂閱類型",
         "urlRequired": "請輸入訂閱連結",
         "uidMissing": "缺少訂閱識別碼",
-        "saveFailed": "儲存訂閱失敗"
+        "saveFailed": "無法儲存訂閱"
       },
       "warnings": {
-        "frequentUpdate": "間隔過短會頻繁觸發核心重新載入並中斷現有連線，建議使用預設值 {{minutes}} 分鐘（24 小時）"
+        "frequentUpdate": "頻率過快會不斷觸發核心重新載入並中斷現有連線，建議使用預設值 {{minutes}} 分鐘（24 小時）"
       },
       "feedback": {
         "notifications": {
@@ -152,43 +152,43 @@
         "multiUri": "多條網址，請使用換行分隔（支援 Base64 編碼）"
       },
       "actions": {
-        "prepend": "新增前置代理節點",
-        "append": "新增後置代理節點"
+        "prepend": "新增前置節點",
+        "append": "新增後置節點"
       }
     },
     "groupsEditor": {
-      "title": "編輯代理組",
+      "title": "編輯節點分組",
       "errors": {
-        "nameRequired": "代理組名稱為必填",
-        "nameExists": "代理組名稱已存在"
+        "nameRequired": "節點分組名稱為必填",
+        "nameExists": "節點分組名稱已存在"
       },
       "fields": {
-        "type": "代理組類型",
-        "name": "代理組名稱",
-        "icon": "代理組圖示",
-        "proxies": "使用代理",
-        "provider": "使用代理集合",
+        "type": "節點分組類型",
+        "name": "節點分組名稱",
+        "icon": "節點分組圖示",
+        "proxies": "使用節點",
+        "provider": "使用節點服務商",
         "healthCheckUrl": "健康檢查網址",
         "expectedStatus": "預期狀態碼",
-        "interval": "檢查間隔",
+        "interval": "檢查頻率",
         "maxFailedTimes": "最大失敗次數",
         "interfaceName": "輸出介面",
         "routingMark": "路由標記",
         "filter": "篩選節點",
         "excludeFilter": "排除節點",
         "excludeType": "排除節點類型",
-        "includeAll": "包含所有輸出代理、代理集合",
-        "includeAllProxies": "包含所有輸出代理",
-        "includeAllProviders": "包含所有代理集合"
+        "includeAll": "包含所有輸出節點、節點服務商",
+        "includeAllProxies": "包含所有輸出節點",
+        "includeAllProviders": "包含所有節點服務商"
       },
       "toggles": {
         "lazy": "延遲載入",
         "disableUdp": "停用 UDP",
-        "hidden": "隱藏代理組"
+        "hidden": "隱藏節點分組"
       },
       "actions": {
-        "prepend": "新增前置代理組",
-        "append": "新增後置代理組"
+        "prepend": "新增前置節點分組",
+        "append": "新增後置節點分組"
       }
     },
     "editor": {
@@ -209,13 +209,13 @@
     },
     "confirmDelete": {
       "title": "確認刪除",
-      "message": "此操作無法復原"
+      "message": "此動作無法還原，請確認要執行嗎？"
     },
     "logViewer": {
       "title": "指令碼控制台輸出"
     },
     "qrViewer": {
-      "title": "Subscription QR Code"
+      "title": "訂閱 QR Code"
     }
   }
 }

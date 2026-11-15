@@ -195,33 +195,15 @@ pub enum DownloadEvent {
     Finished,
 }
 
-const MIRRORS: [&str; 2] = ["https://update.hwdns.net/", "https://gh-proxy.org/"];
 /// A source delivering less than this per window is dropped for the next one.
 const MIN_PROGRESS: u64 = 1024 * 1024;
 const PROGRESS_WINDOW: Duration = Duration::from_secs(30);
 
-/// The manifest's URL, then the other mirror, then GitHub itself.
 fn download_sources(url: &tauri::Url) -> Vec<tauri::Url> {
-    let origin = MIRRORS
-        .iter()
-        .find_map(|mirror| url.as_str().strip_prefix(mirror))
-        .unwrap_or(url.as_str());
-    let mut sources = vec![url.clone()];
-    if origin.starts_with("https://github.com/") {
-        let candidates = MIRRORS.iter().map(|mirror| format!("{mirror}{origin}"));
-        for candidate in candidates.chain([origin.to_owned()]) {
-            if let Ok(candidate) = tauri::Url::parse(&candidate)
-                && !sources.contains(&candidate)
-            {
-                sources.push(candidate);
-            }
-        }
-    }
-    sources
+    vec![url.clone()]
 }
 
-/// Tries every source with a throughput floor, then again stopping only on a stall, so a link
-/// that is slow everywhere still finishes.
+/// Retries without a throughput floor when the initial download is too slow.
 async fn download(update: &Update, on_event: impl Fn(DownloadEvent) + Sync) -> Result<Vec<u8>> {
     let sources = download_sources(&update.download_url);
     let mut last_error = None;

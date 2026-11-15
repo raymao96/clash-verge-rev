@@ -1,0 +1,484 @@
+name: Work Test Build
+
+on:
+  workflow_dispatch:
+permissions: write-all
+env:
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: short
+  HUSKY: 0
+concurrency:
+  group: work-test-publication
+  cancel-in-progress: false
+
+jobs:
+  prepare_release:
+    name: Prepare Personal Draft Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release_tag: ${{ steps.source.outputs.release_tag }}
+      source_sha: ${{ steps.source.outputs.source_sha }}
+      channel: ${{ steps.source.outputs.channel }}
+      release_id: ${{ steps.draft.outputs.id }}
+      release_created: ${{ steps.draft.outputs.created }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Create test draft
+        id: source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/work" ]; then
+            echo '::error::Test builds must be run from work.'; exit 1
+          fi
+          TAG="work-test-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" --silent
+          gh release create "$TAG" --target "$GITHUB_SHA" --draft --prerelease --title "Work test $TAG" --notes 'Test build only; excluded from automatic updates.'
+          echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          echo "channel=test" >> "$GITHUB_OUTPUT"
+      - name: Record test release
+        id: draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "id=$(gh api 'repos/{owner}/{repo}/releases/tags/${{ steps.source.outputs.release_tag }}' --jq .id)" >> "$GITHUB_OUTPUT"
+          echo 'created=true' >> "$GITHUB_OUTPUT"
+
+  update_tag:
+    name: Publish Completed Release
+    env:
+      RELEASE_TAG: ${{ needs.prepare_release.outputs.release_tag }}
+    outputs:
+      source_sha: ${{ needs.prepare_release.outputs.source_sha }}
+      channel: ${{ needs.prepare_release.outputs.channel }}
+    runs-on: ubuntu-latest
+    needs:
+      [
+        prepare_release,
+        release,
+        release-for-linux-arm,
+        release-for-fixed-webview2,
+      ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare_release.outputs.source_sha }}
+
+      - name: Group changelog platforms
+        run: bash ./scripts-workflow/group_platforms.sh
+
+      - name: Fetch UPDATE logs
+        id: fetch_update_logs
+        run: bash ./scripts/extract_update_logs.sh
+        shell: bash
+
+      - name: Set Env
+        run: |
+          echo "BUILDTIME=$(TZ=Asia/Shanghai date)" >> $GITHUB_ENV
+          TAG_REF="$RELEASE_TAG"
+          echo "TAG_NAME=$TAG_REF" >> $GITHUB_ENV
+          VERSION=$(echo "$TAG_REF" | sed 's/^v//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "DOWNLOAD_URL=https://github.com/${{ github.repository }}/releases/download/$TAG_REF" >> $GITHUB_ENV
+        shell: bash
+
+      - run: |
+          if [ -z "$UPDATE_LOGS" ]; then
+            echo "No update logs found, using default message"
+            UPDATE_LOGS="More new features are now supported. Check for detailed changelog soon."
+          else
+            echo "Using found update logs"
+          fi
+
+          cat > release.txt << EOF
+          $UPDATE_LOGS
+
+          Created at ${{ env.BUILDTIME }}.
+          EOF
+
+      - name: Verify release tag still points to the approved source
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_SHA: ${{ needs.prepare_release.outputs.source_sha }}
+        run: node scripts-workflow/release.mjs verify-target
+
+      - name: Publish Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: true
+        run: |
+          release_id="${{ needs.prepare_release.outputs.release_id }}"
+
+          if [ -z "$release_id" ]; then
+            echo "::error::No prepared release ID found for $TAG_NAME."
+            exit 1
+          fi
+
+          release_info=$(gh api repos/{owner}/{repo}/releases/"$release_id" --jq '[.tag_name, .draft, (.assets | length), .html_url] | @tsv')
+          IFS=$'\t' read -r release_tag release_draft asset_count release_url <<< "$release_info"
+
+          if [ "$release_tag" != "$TAG_NAME" ]; then
+            echo "::error::Prepared release $release_id belongs to $release_tag, expected $TAG_NAME."
+            exit 1
+          fi
+
+          echo "Publishing release $release_id ($release_url) with $asset_count assets."
+
+          if [ "${{ needs.prepare_release.outputs.release_created }}" = 'true' ]; then
+            gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
+              -f name="Clash Verge Rev $TAG_NAME" \
+              -F body=@release.txt \
+              -F draft=false \
+              -F prerelease="$PRERELEASE" \
+              --silent
+          elif [ "$release_draft" = 'true' ]; then
+            gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
+              -F draft=false --silent
+          fi
+
+  release:
+    name: Release Build
+    needs: [prepare_release]
+    env:
+      RELEASE_TAG: ${{ needs.prepare_release.outputs.release_tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare_release.outputs.source_sha }}
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.99.1'
+          targets: ${{ matrix.target }}
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/dev' }}
+          prefix-key: 'v1-rust'
+          shared-key: 'rust-shared-stable-${{ matrix.os }}-${{ matrix.target }}'
+          workspaces: |
+            . -> target
+          cache-all-crates: true
+          cache-workspace-crates: true
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxslt1.1 libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26.13.1'
+          cache: 'pnpm'
+
+      - name: Pnpm install and check
+        run: |
+          pnpm i
+          pnpm run prebuild ${{ matrix.target }}
+
+      - name: Tauri build
+        uses: tauri-apps/tauri-action@v1.0.0
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ needs.prepare_release.outputs.release_id }}
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseBody: 'Draft release, will be updated later.'
+          releaseDraft: true
+          prerelease: true
+          releaseCommitish: ${{ needs.prepare_release.outputs.source_sha }}
+          tauriScript: pnpm
+          args: --target ${{ matrix.target }}
+          uploadUpdaterJson: false
+
+      - name: Attest Windows bundles
+        if: matrix.os == 'windows-latest'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: target/${{ matrix.target }}/release/bundle/nsis/*setup*
+
+      - name: Attest macOS bundles
+        if: matrix.os == 'macos-latest'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+
+      - name: Attest Linux bundles
+        if: matrix.os == 'ubuntu-22.04'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            target/${{ matrix.target }}/release/bundle/deb/*.deb
+            target/${{ matrix.target }}/release/bundle/rpm/*.rpm
+
+  release-for-linux-arm:
+    name: Release Build for Linux ARM
+    needs: [prepare_release]
+    env:
+      RELEASE_TAG: ${{ needs.prepare_release.outputs.release_tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: aarch64-unknown-linux-gnu
+            arch: arm64
+          - os: ubuntu-22.04
+            target: armv7-unknown-linux-gnueabihf
+            arch: armhf
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare_release.outputs.source_sha }}
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.99.1'
+          targets: ${{ matrix.target }}
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/dev' }}
+          prefix-key: 'v1-rust'
+          shared-key: 'rust-shared-stable-${{ matrix.os }}-${{ matrix.target }}'
+          workspaces: |
+            . -> target
+          cache-all-crates: true
+          cache-workspace-crates: true
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26.13.1'
+          cache: 'pnpm'
+
+      - name: Pnpm install and check
+        run: |
+          pnpm i
+          pnpm run prebuild ${{ matrix.target }}
+
+      - name: 'Setup for linux'
+        run: |-
+          sudo ls -lR /etc/apt/
+
+          cat > /tmp/sources.list << EOF
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu jammy main multiverse universe restricted
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu jammy-security main multiverse universe restricted
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu jammy-updates main multiverse universe restricted
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu jammy-backports main multiverse universe restricted
+
+          deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports jammy main multiverse universe restricted
+          deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main multiverse universe restricted
+          deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main multiverse universe restricted
+          deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports jammy-backports main multiverse universe restricted
+          EOF
+
+          sudo mv /etc/apt/sources.list /etc/apt/sources.list.default
+          sudo mv /tmp/sources.list /etc/apt/sources.list
+
+          sudo dpkg --add-architecture ${{ matrix.arch }}
+          sudo apt update
+
+          sudo apt install -y \
+            libxslt1.1:${{ matrix.arch }} \
+            libwebkit2gtk-4.1-dev:${{ matrix.arch }} \
+            libayatana-appindicator3-dev:${{ matrix.arch }} \
+            libssl-dev:${{ matrix.arch }} \
+            patchelf:${{ matrix.arch }} \
+            librsvg2-dev:${{ matrix.arch }}
+
+      - name: 'Install aarch64 tools'
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt install -y \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu
+
+      - name: 'Install armv7 tools'
+        if: matrix.target == 'armv7-unknown-linux-gnueabihf'
+        run: |
+          sudo apt install -y \
+            gcc-arm-linux-gnueabihf \
+            g++-arm-linux-gnueabihf
+
+      - name: Build for Linux
+        run: |
+          export PKG_CONFIG_ALLOW_CROSS=1
+          if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
+            export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig/:$PKG_CONFIG_PATH
+            export PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu/
+          elif [ "${{ matrix.target }}" == "armv7-unknown-linux-gnueabihf" ]; then
+            export PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig/:$PKG_CONFIG_PATH
+            export PKG_CONFIG_SYSROOT_DIR=/usr/arm-linux-gnueabihf/
+          fi
+          pnpm build --target ${{ matrix.target }}
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+
+      - name: Attest Linux bundles
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            target/${{ matrix.target }}/release/bundle/deb/*.deb
+            target/${{ matrix.target }}/release/bundle/rpm/*.rpm
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            target/${{ matrix.target }}/release/bundle/deb/*.deb* \
+            target/${{ matrix.target }}/release/bundle/rpm/*.rpm* \
+            --clobber
+
+  release-for-fixed-webview2:
+    name: Release Build for Fixed WebView2
+    needs: [prepare_release]
+    env:
+      RELEASE_TAG: ${{ needs.prepare_release.outputs.release_tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare_release.outputs.source_sha }}
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.99.1'
+          targets: ${{ matrix.target }}
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/dev' }}
+          prefix-key: 'v1-rust'
+          shared-key: 'rust-shared-stable-${{ matrix.os }}-${{ matrix.target }}-fixed-webview2'
+          workspaces: |
+            . -> target
+          cache-all-crates: true
+          cache-workspace-crates: true
+
+      - uses: pnpm/action-setup@v6
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26.13.1'
+          cache: 'pnpm'
+
+      - name: Pnpm install and check
+        run: |
+          pnpm i
+          pnpm run prebuild ${{ matrix.target }}
+
+      - name: Download WebView2 Runtime
+        run: |
+          invoke-webrequest -uri https://github.com/westinyang/WebView2RuntimeArchive/releases/download/133.0.3065.92/Microsoft.WebView2.FixedVersionRuntime.133.0.3065.92.${{ matrix.arch }}.cab -outfile Microsoft.WebView2.FixedVersionRuntime.133.0.3065.92.${{ matrix.arch }}.cab
+          Expand .\Microsoft.WebView2.FixedVersionRuntime.133.0.3065.92.${{ matrix.arch }}.cab -F:* ./src-tauri
+          Remove-Item .\src-tauri\tauri.windows.conf.json
+          Rename-Item .\src-tauri\webview2.${{ matrix.arch }}.json tauri.windows.conf.json
+
+      - name: Tauri build
+        uses: tauri-apps/tauri-action@v1.0.0
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        with:
+          tauriScript: pnpm
+          args: --target ${{ matrix.target }}
+
+      - name: Rename
+        run: |
+          $files = Get-ChildItem ".\target\${{ matrix.target }}\release\bundle\nsis\*-setup.exe"
+          foreach ($file in $files) {
+            $newName = $file.Name -replace "-setup\.exe$", "_fixed_webview2-setup.exe"
+            Rename-Item $file.FullName $newName
+          }
+
+          $files = Get-ChildItem ".\target\${{ matrix.target }}\release\bundle\nsis\*.nsis.zip"
+          foreach ($file in $files) {
+            $newName = $file.Name -replace "-setup\.nsis\.zip$", "_fixed_webview2-setup.nsis.zip"
+            Rename-Item $file.FullName $newName
+          }
+
+          $files = Get-ChildItem ".\target\${{ matrix.target }}\release\bundle\nsis\*-setup.exe.sig"
+          foreach ($file in $files) {
+            $newName = $file.Name -replace "-setup\.exe\.sig$", "_fixed_webview2-setup.exe.sig"
+            Rename-Item $file.FullName $newName
+          }
+
+      - name: Attest Windows bundles
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: target/${{ matrix.target }}/release/bundle/nsis/*setup*
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $files = Get-ChildItem "target\${{ matrix.target }}\release\bundle\nsis\*setup*" | Select-Object -ExpandProperty FullName
+          gh release upload "$env:RELEASE_TAG" $files --clobber
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

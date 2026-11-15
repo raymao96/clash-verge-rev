@@ -72,19 +72,19 @@ const readPortSettings = (
   mixedPort,
   socks: {
     enabled: verge?.verge_socks_enabled ?? false,
-    port: verge?.verge_socks_port ?? 7898,
+    port: verge?.verge_socks_port ?? 1080,
   },
   http: {
     enabled: verge?.verge_http_enabled ?? false,
-    port: verge?.verge_port ?? 7899,
+    port: verge?.verge_port ?? 1087,
   },
   redir: {
     enabled: verge?.verge_redir_enabled ?? false,
-    port: verge?.verge_redir_port ?? 7895,
+    port: verge?.verge_redir_port ?? 1088,
   },
   tproxy: {
     enabled: verge?.verge_tproxy_enabled ?? false,
-    port: verge?.verge_tproxy_port ?? 7896,
+    port: verge?.verge_tproxy_port ?? 1089,
   },
 })
 
@@ -161,7 +161,7 @@ export const ClashPortViewer = forwardRef<ClashPortViewerRef>((_, ref) => {
   const { verge } = useVerge()
   const { clashInfo } = useClashInfo()
   const configuredMixedPort =
-    verge?.verge_mixed_port ?? clashInfo?.mixed_port ?? 7897
+    verge?.verge_mixed_port ?? clashInfo?.mixed_port ?? 7890
   const displayedMixedPort = useDisplayedMixedPort()
   const [open, setOpen] = useState(false)
   const [ports, setPorts] = useState(() =>

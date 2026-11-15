@@ -8,8 +8,8 @@
     "edit": "編輯",
     "new": "新增",
     "enable": "啟用",
-    "upgrade": "升級內核",
-    "restart": "重啟內核",
+    "upgrade": "升級核心",
+    "restart": "重啟核心",
     "resetToDefault": "重設為預設值",
     "refresh": "重整",
     "retry": "重試",
@@ -45,7 +45,7 @@
     "enabled": "已啟用",
     "disabled": "已停用",
     "saving": "儲存中...",
-    "empty": "空空如也",
+    "empty": "尚無記錄",
     "loading": "載入中..."
   },
   "units": {
@@ -82,8 +82,8 @@
       "details": "錯誤詳情",
       "stack": "錯誤堆疊",
       "componentStack": "元件堆疊",
-      "trafficUnavailable": "流量資料暫時無法使用",
-      "operationFailed": "操作失敗",
+      "trafficUnavailable": "流量數據暫時無法使用",
+      "operationFailed": "發生錯誤",
       "trafficStats": "流量統計錯誤",
       "trafficStatsDescription": "流量統計元件發生錯誤，已停用以避免當機。"
     },
@@ -106,8 +106,8 @@
     },
     "validation": {
       "config": {
-        "failed": "訂閱配置校驗失敗，請檢查訂閱配置文件，變更已撤銷，錯誤詳情：",
-        "bootFailed": "啟動訂閱配置校驗失敗，已使用預設配置啟動；請檢查訂閱配置文件，錯誤詳情：",
+        "failed": "訂閱校驗失敗，請檢查訂閱格式，變更已撤銷，錯誤訊息：",
+        "bootFailed": "啟動訂閱校驗失敗，已使用預設值啟動；請檢查訂閱格式，錯誤訊息：",
         "processTerminated": "驗證程序被終止，請檢查是否有安全軟體阻止了內核執行，或電腦的 CPU／執行環境是否支援該內核程式。"
       },
       "script": {

@@ -87,11 +87,9 @@ const preloadLanguage = async (
     return resolved
   }
 
-  const browserLanguage = resolveLanguage(
-    typeof navigator !== 'undefined' ? navigator.language : undefined,
-  )
-  cacheLanguage(browserLanguage)
-  return browserLanguage
+  const defaultLanguage = resolveLanguage()
+  cacheLanguage(defaultLanguage)
+  return defaultLanguage
 }
 
 export const preloadAppData = async () => {

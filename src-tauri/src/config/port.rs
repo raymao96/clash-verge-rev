@@ -324,12 +324,12 @@ mod tests {
     #[test]
     fn configured_ports_include_disabled_listener_assignments() {
         let ports = configured_listener_ports(&IClashTemp::template(), &IVerge::template());
-        assert!(ports.contains(&7898));
-        assert!(ports.contains(&7899));
+        assert!(ports.contains(&crate::constants::network::ports::DEFAULT_SOCKS));
+        assert!(ports.contains(&crate::constants::network::ports::DEFAULT_HTTP));
         assert!(ports.contains(&9097));
         #[cfg(not(target_os = "windows"))]
-        assert!(ports.contains(&7895));
+        assert!(ports.contains(&crate::constants::network::ports::DEFAULT_REDIR));
         #[cfg(target_os = "linux")]
-        assert!(ports.contains(&7896));
+        assert!(ports.contains(&crate::constants::network::ports::DEFAULT_TPROXY));
     }
 }

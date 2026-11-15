@@ -1,13 +1,12 @@
 name: Release Build
 
 on:
-  pull_request:
-    types: [edited]
-    branches: [main]
-  push:
-    # -rc tag 时预览发布, 跳过 telegram 通知、跳过 winget 提交、跳过 latest.json 文件更新
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag matching the selected commit version (e.g. v2.6.0)'
+        required: true
+        type: string
 permissions: write-all
 env:
   CARGO_INCREMENTAL: 0
@@ -19,46 +18,70 @@ concurrency:
 
 jobs:
   prepare_release:
-    name: Approve Snapshot and Prepare Draft Release
-    if: >-
-      ${{ github.event_name == 'push' ||
-          (github.event.changes.body &&
-           github.event.pull_request.head.repo.full_name == github.repository &&
-           github.event.pull_request.user.login == 'github-actions[bot]' &&
-           startsWith(github.event.pull_request.head.ref, 'publish/v') &&
-           contains(github.event.pull_request.body, '[x] Publish this approved release')) }}
+    name: Prepare Personal Draft Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: read
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       release_tag: ${{ steps.source.outputs.release_tag }}
       source_sha: ${{ steps.source.outputs.source_sha }}
       channel: ${{ steps.source.outputs.channel }}
       release_id: ${{ steps.draft.outputs.id }}
+      release_created: ${{ steps.draft.outputs.created }}
     steps:
-      - name: Checkout trusted release tooling
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
-          ref: refs/heads/dev
           fetch-depth: 0
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '26.13.1'
-      - name: Validate source and publish the approved snapshot
+      - name: Validate selected version and tag
         id: source
         env:
-          RELEASE_COMMAND: ${{ github.event_name == 'push' && 'validate-tag' || 'publish' }}
-        run: node scripts-workflow/release.mjs "$RELEASE_COMMAND"
-
-      - name: Create or reuse draft release
-        id: draft
+          RELEASE_TAG: ${{ inputs.tag_name }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo '::error::Invalid release tag.'; exit 1
+          fi
+          VERSION="${RELEASE_TAG#v}"
+          test "$(node -p "require('./package.json').version")" = "$VERSION"
+          test "$(node -p "require('./src-tauri/tauri.conf.json').version")" = "$VERSION"
+          test "$(sed -n '/^\[package\]/,/^\[/s/^version = "\([^"]*\)"/\1/p' src-tauri/Cargo.toml | head -1)" = "$VERSION"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          echo "channel=personal" >> "$GITHUB_OUTPUT"
+      - name: Create and verify release tag
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ steps.source.outputs.release_tag }}
           SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
-        run: node scripts-workflow/release.mjs prepare-draft
+        run: |
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            if [ "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")" != "$SOURCE_SHA" ]; then
+              gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$RELEASE_TAG" \
+                -f sha="$SOURCE_SHA" -F force=true --silent
+            fi
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$RELEASE_TAG" -f sha="$SOURCE_SHA" --silent
+          fi
+          node scripts-workflow/release.mjs verify-target
+      - name: Create or reuse release
+        id: draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag_name }}
+        run: |
+          release_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id")
+          if [ -n "$release_id" ]; then
+            echo 'created=false' >> "$GITHUB_OUTPUT"
+          else
+            release_id=$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$RELEASE_TAG" -f target_commitish="$GITHUB_SHA" \
+              -f name="Clash Verge Rev $RELEASE_TAG" -f body='Draft release, build in progress.' \
+              -F draft=true --jq .id)
+            echo 'created=true' >> "$GITHUB_OUTPUT"
+          fi
+          test -n "$release_id"
+          echo "id=$release_id" >> "$GITHUB_OUTPUT"
 
   update_tag:
     name: Publish Completed Release
@@ -96,7 +119,7 @@ jobs:
           echo "TAG_NAME=$TAG_REF" >> $GITHUB_ENV
           VERSION=$(echo "$TAG_REF" | sed 's/^v//')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "DOWNLOAD_URL=https://github.com/clash-verge-rev/clash-verge-rev/releases/download/$TAG_REF" >> $GITHUB_ENV
+          echo "DOWNLOAD_URL=https://github.com/${{ github.repository }}/releases/download/$TAG_REF" >> $GITHUB_ENV
         shell: bash
 
       - run: |
@@ -109,31 +132,6 @@ jobs:
 
           cat > release.txt << EOF
           $UPDATE_LOGS
-
-          ## 下载地址
-
-          ### Windows (不再支持Win7)
-          #### 正常版本(推荐)
-          - [64位(常用)](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_x64-setup.exe) | [ARM64(不常用)](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_arm64-setup.exe)
-
-          #### 内置Webview2版(体积较大，仅在企业版系统或无法安装webview2时使用)
-          - [64位](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_x64_fixed_webview2-setup.exe) | [ARM64](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_arm64_fixed_webview2-setup.exe)
-
-          ### macOS
-          - [Apple M芯片](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_aarch64.dmg) | [Intel芯片](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_x64.dmg)
-
-          ### Linux
-          #### DEB包(Debian系) 使用 apt ./路径 安装
-          - [64位](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_amd64.deb) | [ARM64](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_arm64.deb) | [ARMv7](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_armhf.deb)
-
-          #### RPM包(Redhat系) 使用 dnf ./路径 安装
-          - [64位](${{ env.DOWNLOAD_URL }}/Clash.Verge-${{ env.VERSION }}-1.x86_64.rpm) | [ARM64](${{ env.DOWNLOAD_URL }}/Clash.Verge-${{ env.VERSION }}-1.aarch64.rpm) | [ARMv7](${{ env.DOWNLOAD_URL }}/Clash.Verge-${{ env.VERSION }}-1.armhfp.rpm)
-
-          ### FAQ
-          - [常见问题](https://clash-verge-rev.github.io/faq/windows.html)
-
-          ### 稳定机场VPN推荐
-          - [狗狗加速](https://cvr.dginv.click/#/register?code=oaxsAGo6)
 
           Created at ${{ env.BUILDTIME }}.
           EOF
@@ -157,7 +155,7 @@ jobs:
           fi
 
           release_info=$(gh api repos/{owner}/{repo}/releases/"$release_id" --jq '[.tag_name, .draft, (.assets | length), .html_url] | @tsv')
-          IFS=$'\t' read -r release_tag _ asset_count release_url <<< "$release_info"
+          IFS=$'\t' read -r release_tag release_draft asset_count release_url <<< "$release_info"
 
           if [ "$release_tag" != "$TAG_NAME" ]; then
             echo "::error::Prepared release $release_id belongs to $release_tag, expected $TAG_NAME."
@@ -166,12 +164,17 @@ jobs:
 
           echo "Publishing release $release_id ($release_url) with $asset_count assets."
 
-          gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
-            -f name="Clash Verge Rev $TAG_NAME" \
-            -F body=@release.txt \
-            -F draft=false \
-            -F prerelease="$PRERELEASE" \
-            --silent
+          if [ "${{ needs.prepare_release.outputs.release_created }}" = 'true' ]; then
+            gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
+              -f name="Clash Verge Rev $TAG_NAME" \
+              -F body=@release.txt \
+              -F draft=false \
+              -F prerelease="$PRERELEASE" \
+              --silent
+          elif [ "$release_draft" = 'true' ]; then
+            gh api --method PATCH repos/{owner}/{repo}/releases/"$release_id" \
+              -F draft=false --silent
+          fi
 
   release:
     name: Release Build
@@ -246,12 +249,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           releaseId: ${{ needs.prepare_release.outputs.release_id }}
           tagName: ${{ env.RELEASE_TAG }}
@@ -519,210 +516,3 @@ jobs:
           $files = Get-ChildItem "target\${{ matrix.target }}\release\bundle\nsis\*setup*" | Select-Object -ExpandProperty FullName
           gh release upload "$env:RELEASE_TAG" $files --clobber
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-  prepare-next-dev:
-    name: Prepare Next Dev Version
-    if: ${{ needs.update_tag.outputs.channel == 'stable' }}
-    needs: [prepare_release, update_tag]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    concurrency:
-      group: prepare-release
-      cancel-in-progress: false
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      RELEASE_TAG: ${{ needs.prepare_release.outputs.release_tag }}
-      SOURCE_SHA: ${{ needs.prepare_release.outputs.source_sha }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: refs/heads/dev
-          fetch-depth: 0
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '26.13.1'
-      - uses: pnpm/action-setup@v6
-        with:
-          run_install: false
-      - name: Prepare version and changelog PR
-        run: |
-          pnpm install --frozen-lockfile --ignore-scripts
-          node scripts-workflow/release.mjs next-dev
-
-  release-update:
-    if: ${{ needs.update_tag.outputs.channel == 'stable' }}
-    name: Release Update
-    runs-on: ubuntu-latest
-    needs: [update_tag]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.update_tag.outputs.source_sha }}
-
-      - name: Install Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: '26.13.1'
-
-      - uses: pnpm/action-setup@v6
-        name: Install pnpm
-        with:
-          run_install: false
-
-      - name: Pnpm install
-        run: pnpm i
-
-      - name: Release updater file
-        run: pnpm updater
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release-update-for-fixed-webview2:
-    if: ${{ needs.update_tag.outputs.channel == 'stable' }}
-    runs-on: ubuntu-latest
-    needs: [update_tag]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.update_tag.outputs.source_sha }}
-
-      - name: Install Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: '26.13.1'
-
-      - uses: pnpm/action-setup@v6
-        name: Install pnpm
-        with:
-          run_install: false
-
-      - name: Pnpm install
-        run: pnpm i
-
-      - name: Release updater file
-        run: pnpm updater-fixed-webview2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  submit-to-winget:
-    if: ${{ needs.update_tag.outputs.channel == 'stable' }}
-    name: Submit to Winget
-    runs-on: ubuntu-latest
-    needs: [update_tag, release-update]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.update_tag.outputs.source_sha }}
-          fetch-depth: 0
-      - name: Get Version
-        run: |
-          sudo apt-get update
-          sudo apt-get install jq
-          echo "VERSION=$(cat package.json | jq '.version' | tr -d '"')" >> $GITHUB_ENV
-      - name: Submit to Winget
-        uses: vedantmgoyal9/winget-releaser@main
-        with:
-          identifier: ClashVergeRev.ClashVergeRev
-          version: ${{env.VERSION}}
-          release-tag: v${{env.VERSION}}
-          installers-regex: '_(arm64|x64|x86)-setup\.exe$'
-          token: ${{ secrets.WINGET_TOKEN  }}
-
-  notify-telegram:
-    if: ${{ needs.update_tag.outputs.channel == 'stable' }}
-    name: Notify Telegram
-    runs-on: ubuntu-latest
-    needs:
-      [
-        update_tag,
-        release-update,
-        release-update-for-fixed-webview2,
-        submit-to-winget,
-      ]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.update_tag.outputs.source_sha }}
-
-      - name: Group changelog platforms
-        run: bash ./scripts-workflow/group_platforms.sh
-
-      - name: Fetch UPDATE logs
-        id: fetch_update_logs
-        run: bash ./scripts/extract_update_logs.sh
-        shell: bash
-
-      - name: Install Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: '26.13.1'
-
-      - uses: pnpm/action-setup@v6
-        name: Install pnpm
-        with:
-          run_install: false
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Get Version and Release Info
-        run: |
-          sudo apt-get update
-          sudo apt-get install jq
-          echo "VERSION=$(cat package.json | jq '.version' | tr -d '"')" >> $GITHUB_ENV
-          echo "DOWNLOAD_URL=https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v$(cat package.json | jq '.version' | tr -d '"')" >> $GITHUB_ENV
-          echo "BUILDTIME=$(TZ=Asia/Shanghai date)" >> $GITHUB_ENV
-
-      - name: Generate release.txt
-        run: |
-          if [ -z "$UPDATE_LOGS" ]; then
-            echo "No update logs found, using default message"
-            UPDATE_LOGS="More new features are now supported. Check for detailed changelog soon."
-          else
-            echo "Using found update logs"
-          fi
-
-          cat > release.txt << EOF
-          $UPDATE_LOGS
-
-          ## 下载地址
-
-          ### Windows (不再支持Win7)
-          #### 正常版本(推荐)
-          - [64位(常用)](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_x64-setup.exe) | [ARM64(不常用)](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_arm64-setup.exe)
-
-          #### 内置Webview2版(体积较大，仅在企业版系统或无法安装webview2时使用)
-          - [64位](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_x64_fixed_webview2-setup.exe) | [ARM64](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_arm64_fixed_webview2-setup.exe)
-
-          ### macOS
-          - [Apple M芯片](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_aarch64.dmg) | [Intel芯片](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_x64.dmg)
-
-          ### Linux
-          #### DEB包(Debian系) 使用 apt ./路径 安装
-          - [64位](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_amd64.deb) | [ARM64](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_arm64.deb) | [ARMv7](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_armhf.deb)
-
-          #### RPM包(Redhat系) 使用 dnf ./路径 安装
-          - [64位](${{ env.DOWNLOAD_URL }}/Clash.Verge-${{ env.VERSION }}-1.x86_64.rpm) | [ARM64](${{ env.DOWNLOAD_URL }}/Clash.Verge-${{ env.VERSION }}-1.aarch64.rpm) | [ARMv7](${{ env.DOWNLOAD_URL }}/Clash.Verge-${{ env.VERSION }}-1.armhfp.rpm)
-
-          ### FAQ
-          - [常见问题](https://clash-verge-rev.github.io/faq/windows.html)
-
-          ### 稳定机场VPN推荐
-          - [狗狗加速](https://cvr.dginv.click/#/register?code=oaxsAGo6)
-
-          Created at ${{ env.BUILDTIME }}.
-          EOF
-
-      - name: Send Telegram Notification
-        run: node scripts/telegram.mjs
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          BUILD_TYPE: release
-          VERSION: ${{ env.VERSION }}
-          DOWNLOAD_URL: ${{ env.DOWNLOAD_URL }}

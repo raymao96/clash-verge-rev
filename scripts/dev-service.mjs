@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from 'node:child_process'
-import { access } from 'node:fs/promises'
+import { access, copyFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -97,6 +97,12 @@ export async function prepareDevelopmentService() {
     }
     await access(executable)
   }
+  if (process.platform === 'win32') {
+    await copyFile(
+      join(serviceDirectory, 'clash-verge-service-install.exe'),
+      join(serviceDirectory, 'clash-verge-service-prep.exe'),
+    )
+  }
   return serviceDirectory
 }
 
@@ -107,7 +113,9 @@ export async function ensureDevelopmentService({
   const extension = platform === 'win32' ? '.exe' : ''
   const installer = join(
     serviceDirectory,
-    `clash-verge-service-install${extension}`,
+    platform === 'win32'
+      ? 'clash-verge-service-prep.exe'
+      : `clash-verge-service-install${extension}`,
   )
   const host = execFileSync('rustc', ['-vV'], { encoding: 'utf8' }).match(
     /^host: (.+)$/m,

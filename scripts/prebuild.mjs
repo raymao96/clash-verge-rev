@@ -572,6 +572,15 @@ async function findExtractedFile(dir, fileName) {
   return null
 }
 
+async function copyWindowsServicePreparationTool() {
+  if (platform === 'win32') {
+    await fsp.copyFile(
+      path.join(SERVICE_DIR, 'clash-verge-service-install.exe'),
+      path.join(SERVICE_DIR, 'clash-verge-service-prep.exe'),
+    )
+  }
+}
+
 async function resolveServiceBundle() {
   const files = SERVICE_BINARIES.map((name) => {
     const info = serviceFileInfo(name)
@@ -618,6 +627,7 @@ async function resolveServiceBundle() {
       if (platform !== 'win32') await fsp.chmod(targetPath, 0o755)
       await updateHashCache(targetPath)
     }
+    await copyWindowsServicePreparationTool()
     return
   }
   const { archiveFile, downloadURL } = resolveServiceRelease(
@@ -659,6 +669,7 @@ async function resolveServiceBundle() {
       log_success(`Extracted service file: ${targetFile}`)
     }
 
+    await copyWindowsServicePreparationTool()
     log_success(`service bundle finished: ${archiveFile}`)
   } finally {
     await fsp.rm(tempDir, { recursive: true, force: true })

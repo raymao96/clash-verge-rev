@@ -750,6 +750,10 @@ fn install_service() -> Result<()> {
 }
 
 fn invoke_service_install(cores: &[clash_verge_service_ipc::management::CoreSource], core_only: bool) -> Result<()> {
+    // Windows installer detection otherwise blocks the unprivileged preparation phase.
+    #[cfg(windows)]
+    let name = "clash-verge-service-prep.exe".to_owned();
+    #[cfg(not(windows))]
     let name = format!("clash-verge-service-install{}", std::env::consts::EXE_SUFFIX);
     let installer = packaged_service_tool_path(&name, || {
         #[cfg(target_os = "linux")]

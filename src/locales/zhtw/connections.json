@@ -1,6 +1,6 @@
 {
   "page": {
-    "title": "連線"
+    "title": "連線狀態"
   },
   "components": {
     "fields": {
@@ -23,8 +23,8 @@
     },
     "actions": {
       "active": "活躍",
-      "closed": "已關閉",
-      "closeConnection": "關閉連線"
+      "closed": "已中止",
+      "closeConnection": "中止連線"
     },
     "columnManager": {
       "title": "欄位設定",

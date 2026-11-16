@@ -1,3 +1,4 @@
+// CN retains update code for existing commands without enabling automatic updates.
 use crate::{config::Config, singleton, utils::dirs};
 use anyhow::{Context as _, Result};
 use chrono::Utc;
@@ -37,6 +38,7 @@ impl SilentUpdater {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_update_ready(&self) -> bool {
         self.update_ready.load(Ordering::Acquire)
     }
@@ -53,6 +55,7 @@ impl SilentUpdater {
         Ok(dirs::app_home_dir()?.join("update_cache"))
     }
 
+    #[allow(dead_code)]
     fn write_cache(bytes: &[u8], version: &str) -> Result<()> {
         let cache_dir = Self::cache_dir()?;
         std::fs::create_dir_all(&cache_dir)
@@ -135,6 +138,7 @@ impl SilentUpdater {
     }
 }
 
+#[allow(dead_code)]
 pub fn is_build_to_stable(current: &str, remote: &str) -> bool {
     let Some((base, build)) = current.trim_start_matches('v').split_once('+') else {
         return false;
@@ -143,6 +147,7 @@ pub fn is_build_to_stable(current: &str, remote: &str) -> bool {
 }
 
 /// Compares numeric version components after stripping version suffixes.
+#[allow(dead_code)]
 fn version_lte(a: &str, b: &str) -> bool {
     let parse = |v: &str| -> Vec<u64> {
         v.trim_start_matches('v')
@@ -297,6 +302,7 @@ impl SilentUpdater {
     }
 
     /// Installs a newer cached update before normal startup, if the user confirms.
+    #[allow(dead_code)]
     pub async fn try_install_on_startup(&self, app_handle: &tauri::AppHandle) -> bool {
         if !Config::verge().await.latest_arc().auto_check_update.unwrap_or(true) {
             Self::delete_cache();
@@ -459,6 +465,7 @@ impl SilentUpdater {
 }
 
 impl SilentUpdater {
+    #[allow(dead_code)]
     async fn ask_user_to_install(app_handle: &tauri::AppHandle, version: &str) -> bool {
         use tauri_plugin_dialog::{DialogExt as _, MessageDialogButtons, MessageDialogKind};
 
@@ -485,6 +492,7 @@ impl SilentUpdater {
 
 impl SilentUpdater {
     /// Uses injected HTML so the splash has no bundled-file dependency.
+    #[allow(dead_code)]
     fn show_update_splash(app_handle: &tauri::AppHandle, version: &str) {
         use tauri::{WebviewUrl, WebviewWindowBuilder};
 
@@ -556,6 +564,7 @@ impl SilentUpdater {
         logging!(info, Type::System, "Update splash window shown");
     }
 
+    #[allow(dead_code)]
     fn close_update_splash(app_handle: &tauri::AppHandle) {
         use tauri::Manager as _;
         if let Some(window) = app_handle.get_webview_window("update-splash") {
@@ -566,6 +575,7 @@ impl SilentUpdater {
 }
 
 impl SilentUpdater {
+    #[allow(dead_code)]
     async fn check_and_download(&self, app_handle: &tauri::AppHandle) -> Result<()> {
         // Registered before reading the switch, so `discard_pending` either cancels it or ran first.
         let cancel = CancellationToken::new();
@@ -653,6 +663,7 @@ impl SilentUpdater {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn start_background_check(&self, app_handle: tauri::AppHandle) {
         // Permanent watcher: daily update cycles for the lifetime of the app.
         logging!(info, Type::System, "Silent updater: background task started");

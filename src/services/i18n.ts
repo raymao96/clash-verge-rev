@@ -14,7 +14,6 @@ export const supportedLanguages = [
   'de',
   'es',
   'jp',
-  'zhtw',
   'pt',
 ]
 
@@ -30,7 +29,6 @@ export const resolveLanguage = (language?: string) => {
     return FALLBACK_LANGUAGE
   }
 
-  if (normalized === 'zh-tw') return 'zhtw'
   if (normalized === 'zh-cn') return 'zh'
 
   if (supportedLanguages.includes(normalized)) {

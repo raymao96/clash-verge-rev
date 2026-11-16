@@ -7,6 +7,8 @@ pub mod notification;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
 pub enum NoticeStatus {
     #[serde(rename = "info")]
+    // Retained for the disabled automatic updater.
+    #[allow(dead_code)]
     Info,
     #[serde(rename = "import_sub_url::ok")]
     ImportSubUrlOk,

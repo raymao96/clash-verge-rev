@@ -480,7 +480,6 @@ const settingsCatalog: readonly SettingEntry[] = [
     'settings.modals.misc.fields.appLogMaxCount': 'app log max count',
     'settings.modals.misc.fields.autoCloseConnections':
       'auto close connections',
-    'settings.modals.misc.fields.autoCheckUpdate': 'auto check update',
     'settings.modals.misc.fields.enableBuiltinEnhanced':
       'enable builtin enhanced',
     'settings.modals.misc.fields.proxyLayoutColumns': 'proxy layout columns',
@@ -584,7 +583,6 @@ const settingsCatalog: readonly SettingEntry[] = [
     'settings.components.verge.advanced.fields.openConfDir': 'open conf dir ',
     'settings.components.verge.advanced.fields.openCoreDir': 'open core dir ',
     'settings.components.verge.advanced.fields.openLogsDir': 'open logs dir ',
-    'settings.components.verge.advanced.fields.checkUpdates': 'check updates ',
     'settings.components.verge.advanced.fields.openDevTools': 'open dev tools ',
     'settings.components.verge.advanced.fields.liteModeSettings':
       'lite mode settings ',

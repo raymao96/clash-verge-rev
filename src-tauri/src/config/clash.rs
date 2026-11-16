@@ -290,8 +290,8 @@ fn test_clash_info() {
     fn get_result<S: Into<String>>(port: u16, server: S) -> ClashInfo {
         ClashInfo {
             mixed_port: port,
-            socks_port: 7898,
-            port: 7899,
+            socks_port: 1080,
+            port: 1087,
             server: server.into(),
             secret: None,
         }
@@ -299,10 +299,10 @@ fn test_clash_info() {
 
     assert_eq!(
         IClashTemp(IClashTemp::guard(Mapping::new())).get_client_info(),
-        get_result(7897, "127.0.0.1:9097")
+        get_result(7890, "127.0.0.1:9097")
     );
 
-    assert_eq!(get_case("", ""), get_result(7897, "127.0.0.1:9097"));
+    assert_eq!(get_case("", ""), get_result(7890, "127.0.0.1:9097"));
 
     assert_eq!(get_case(65537, ""), get_result(1, "127.0.0.1:9097"));
 

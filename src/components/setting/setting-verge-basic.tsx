@@ -8,7 +8,6 @@ import { DialogRef, TooltipIcon } from '@/components/base'
 import { useVerge } from '@/hooks/use-verge'
 import { navigationItems } from '@/pages/_navigation-meta'
 import { copyClashEnv } from '@/services/cmds'
-import { supportedLanguages } from '@/services/i18n'
 import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
 import getSystem from '@/utils/get-system'
@@ -22,7 +21,6 @@ import { MiscViewer } from './mods/misc-viewer'
 import { SettingItem, SettingList } from './mods/setting-comp'
 import { ThemeModeSwitch } from './mods/theme-mode-switch'
 import { ThemeViewer } from './mods/theme-viewer'
-import { UpdateViewer } from './mods/update-viewer'
 
 interface Props {
   onError?: (err: Error) => void
@@ -30,26 +28,10 @@ interface Props {
 
 const OS = getSystem()
 
-const languageOptions = supportedLanguages.map((code) => {
-  const labels: { [key: string]: string } = {
-    en: 'English',
-    ru: 'Русский',
-    zh: '简体中文',
-    fa: 'فارسی',
-    tt: 'Татар',
-    id: 'Bahasa Indonesia',
-    ar: 'العربية',
-    ko: '한국어',
-    tr: 'Türkçe',
-    de: 'Deutsch',
-    es: 'Español',
-    jp: '日本語',
-    zhtw: '繁體中文',
-    pt: 'Português',
-  }
-  const label = labels[code] || code
-  return { code, label }
-})
+const languageOptions = [
+  { code: 'en', label: 'English' },
+  { code: 'zh', label: '简体中文' },
+]
 
 const SettingVergeBasic = ({ onError }: Props) => {
   const { t } = useTranslation()
@@ -68,7 +50,6 @@ const SettingVergeBasic = ({ onError }: Props) => {
   const miscRef = useRef<DialogRef>(null)
   const themeRef = useRef<DialogRef>(null)
   const layoutRef = useRef<DialogRef>(null)
-  const updateRef = useRef<DialogRef>(null)
   const backupRef = useRef<DialogRef>(null)
 
   const onChangeData = (patch: any) => {
@@ -97,7 +78,6 @@ const SettingVergeBasic = ({ onError }: Props) => {
       <HotkeyViewer ref={hotkeyRef} />
       <MiscViewer ref={miscRef} />
       <LayoutViewer ref={layoutRef} />
-      <UpdateViewer ref={updateRef} />
       <BackupViewer ref={backupRef} />
 
       <SettingItem

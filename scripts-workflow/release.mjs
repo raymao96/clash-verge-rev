@@ -129,8 +129,7 @@ function fetchBranches() {
     'fetch',
     '--no-tags',
     'origin',
-    '+refs/heads/dev:refs/remotes/origin/dev',
-    '+refs/heads/main:refs/remotes/origin/main',
+    '+refs/heads/dev-cn:refs/remotes/origin/dev-cn',
   )
 }
 
@@ -172,7 +171,7 @@ function prepare() {
     requireBotPr(refresh, 'dev', 'release/')
   }
   fetchBranches()
-  git('checkout', '--detach', 'origin/dev')
+  git('checkout', '--detach', 'origin/dev-cn')
   const channel = refresh
     ? isRc(branchTag(refresh.head.ref))
       ? 'rc'
@@ -483,7 +482,7 @@ function publishPr() {
   const sha = pr.merge_commit_sha
   fetchBranches()
   git('fetch', '--no-tags', 'origin', sha)
-  git('merge-base', '--is-ancestor', sha, 'origin/dev')
+  git('merge-base', '--is-ancestor', sha, 'origin/dev-cn')
   validateVersionCommit(tag, sha)
   const branch = `publish/${tag}`
   const existing = list(
@@ -575,7 +574,7 @@ function publish() {
     )
   fetchBranches()
   git('fetch', '--no-tags', 'origin', sha)
-  git('merge-base', '--is-ancestor', sha, 'origin/dev')
+  git('merge-base', '--is-ancestor', sha, 'origin/dev-cn')
   validateVersionCommit(tag, sha)
   const marker = `Release workflow run: ${env.GITHUB_RUN_ID}\nSource: ${sha}\nPR: ${pr.number}`
   const existing = remoteRefs().find(([, ref]) => ref === `refs/tags/${tag}`)
@@ -632,23 +631,36 @@ function publish() {
 }
 
 function validateTag() {
-  const tag = env.GITHUB_REF_NAME
-  if (!isRelease(tag)) throw new Error('Expected a stable or RC release tag.')
+  const version = env.CN_VERSION?.replace(/^v/, '')
+  const releaseVersion = `v${version}`
+  if (!isRelease(releaseVersion))
+    throw new Error('Expected a stable or RC version, e.g. 2.6.0.')
+  const tag = `cn-${releaseVersion}`
   fetchBranches()
   const sha = git('rev-parse', `${env.GITHUB_SHA}^{commit}`)
-  const ref = get(`git/ref/tags/${tag}`)
-  const object = ref.object.type === 'tag' && get(`git/tags/${ref.object.sha}`)
-  if (object && object.message.includes('Release workflow run:'))
-    throw new Error(
-      'Resume the original publication run for workflow-owned tags.',
-    )
-  git('fetch', '--no-tags', 'origin', `refs/tags/${tag}`)
-  if (git('rev-parse', 'FETCH_HEAD^{commit}') !== sha)
-    throw new Error('The tag moved after this run started.')
-  for (const branch of ['main', 'dev'])
-    git('merge-base', '--is-ancestor', sha, `origin/${branch}`)
-  validateVersions(tag, sha)
-  releaseOutput(tag, sha)
+  if (sha !== git('rev-parse', 'origin/dev-cn'))
+    throw new Error('Run the workflow on the latest dev-cn commit.')
+  validateVersions(releaseVersion, sha)
+  const existing = remoteRefs().some(([, ref]) => ref === `refs/tags/${tag}`)
+  if (existing) {
+    const ref = get(`git/ref/tags/${tag}`)
+    const target =
+      ref.object.type === 'tag'
+        ? get(`git/tags/${ref.object.sha}`).object
+        : ref.object
+    if (target.type !== 'commit') throw new Error('Expected a commit tag.')
+    if (target.sha !== sha) {
+      api(`git/refs/tags/${tag}`, { sha, force: true }, 'PATCH')
+    }
+  } else {
+    api('git/refs', { ref: `refs/tags/${tag}`, sha })
+  }
+  verifyTarget(tag, sha)
+  output({
+    release_tag: tag,
+    source_sha: sha,
+    channel: isRc(releaseVersion) ? 'rc' : 'stable',
+  })
 }
 
 function prepareDraft() {
@@ -662,17 +674,15 @@ function prepareDraft() {
     `.[] | select(.tag_name == ${JSON.stringify(tag)}) | {id, draft}`,
   ])
   const release = result ? JSON.parse(result) : null
-  if (release && !release.draft)
-    throw new Error('This release is already public.')
   const draft =
     release ||
     api('releases', {
       tag_name: tag,
       target_commitish: env.SOURCE_SHA,
-      name: `Clash Verge Rev ${tag}`,
+      name: `Clash Verge Rev CN ${tag.replace(/^cn-/, '')}`,
       body: 'Draft release, will be updated later.',
       draft: true,
-      prerelease: isRc(tag),
+      prerelease: isRc(tag.replace(/^cn-/, '')),
     })
   output({ id: draft.id })
 }
@@ -736,8 +746,8 @@ function nextDev() {
   fetchBranches()
   git('fetch', '--no-tags', 'origin', source)
   git('merge-base', '--is-ancestor', source, 'origin/main')
-  git('merge-base', '--is-ancestor', source, 'origin/dev')
-  git('checkout', '--detach', 'origin/dev')
+  git('merge-base', '--is-ancestor', source, 'origin/dev-cn')
+  git('checkout', '--detach', 'origin/dev-cn')
   const sha = git('rev-parse', 'HEAD')
   validateVersions(tag, source)
   validateVersions(tag, sha)

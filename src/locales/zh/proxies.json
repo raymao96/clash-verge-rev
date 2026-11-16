@@ -47,7 +47,7 @@
       "noProxies": "暂无代理",
       "noSubscriptions": {
         "title": "尚未导入订阅",
-        "description": "代理页没有可展示的内容。请先前往“订阅”页面导入并启用订阅。"
+        "description": "代理页没有可展示的内容，请先导入并启用订阅。"
       },
       "inactiveSubscription": {
         "title": "尚未激活订阅",
